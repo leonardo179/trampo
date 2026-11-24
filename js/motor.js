@@ -48,8 +48,9 @@ export const termoAmbiguo = i => i?.frase?.trim();
 export function escolherCategoria(i, id) {
   const c = vocab?.categoria(id);
   const etiquetas = [{ campo: Campo.CATEGORIA, rotulo: c ? `${c.emoji} ${c.nome}` : 'Categoria', emoji: c?.emoji || '' },
-    ...i.etiquetas.filter(e => e.campo !== Campo.CATEGORIA)];
-  return i.copiar({ categoriaId: id, candidatas: [], palpite: false, etiquetas });
+    ...i.etiquetas.filter(e => e.campo !== Campo.CATEGORIA && e.campo !== Campo.TEXTO)];
+  // Serviço escolhido: a sobra da frase deixa de filtrar (igual ao app Android).
+  return i.copiar({ categoriaId: id, candidatas: [], palpite: false, textoLivre: '', etiquetas });
 }
 
 /**
