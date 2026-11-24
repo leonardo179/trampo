@@ -1,4 +1,4 @@
-import { h, icone, avatar, toast, folha, confirmar, botaoCarregando } from '../ui.js';
+import { h, icone, avatar, toast, folha, confirmar, botaoCarregando, acoesConta } from '../ui.js';
 
 let pedidoInstalar = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; });
@@ -58,7 +58,7 @@ export default async function telaPerfil({ D, ir }) {
     visitante ? h('section.secao', h('div.cartao',
       h('div', { style: { fontWeight: 750, fontSize: '16px', marginBottom: '6px' } }, 'Uma conta só para tudo'),
       h('p', { style: { margin: '0 0 14px', color: 'var(--texto-2)', fontSize: '14px' } }, 'Com ela você chama profissionais, guarda favoritos, publica pedidos — e, se quiser, também oferece seus serviços.'),
-      h('button.botao.largo', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis'))) : null,
+      acoesConta(ir, 'Criar conta grátis', { largo: true }))) : null,
 
     h('section.secao', h('div.cartao', { style: { padding: '4px 16px' } },
       visitante ? null : linha('usuario', 'Meus dados', 'Nome, WhatsApp, cidade e bairro', editar),
@@ -83,10 +83,13 @@ export default async function telaPerfil({ D, ir }) {
           ['🤝', 'Preço e prazo são combinados direto entre vocês dois. O Trampo não intermedia pagamento.']]
           .map(([e, t]) => h('div', { style: { display: 'flex', gap: '12px', padding: '8px 0', fontSize: '14.5px', color: 'var(--texto-2)' } }, h('span', e), t)),
         h('div.acoes', h('button.botao', { onclick: f }, 'Entendi'))])),
-      h('button.menu-linha', {
-        style: { color: 'var(--perigo)' },
-        onclick: async () => { if (await confirmar('Sair da conta?', visitante ? 'O que você viu como visitante não fica guardado.' : 'Você pode entrar de novo quando quiser.', 'Sair')) D.sair(); }
-      }, h('span.ic', { style: { color: 'var(--perigo)' } }, icone('sair', 'p')), h('span', 'Sair')))),
+      // Visitante não tem de onde sair: no lugar de "Sair", o caminho para entrar na conta.
+      visitante
+        ? linha('usuario', 'Entrar na minha conta', 'Já tem cadastro? Entre com seu e-mail', () => ir('/entrar'))
+        : h('button.menu-linha', {
+          style: { color: 'var(--perigo)' },
+          onclick: async () => { if (await confirmar('Sair da conta?', 'Você pode entrar de novo quando quiser.', 'Sair')) D.sair(); }
+        }, h('span.ic', { style: { color: 'var(--perigo)' } }, icone('sair', 'p')), h('span', 'Sair')))),
 
     h('p', { style: { textAlign: 'center', fontSize: '12px', color: 'var(--texto-3)', padding: '20px' } }, 'Trampo web · versão de demonstração'));
 

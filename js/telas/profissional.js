@@ -1,6 +1,6 @@
 // Criar ou editar o perfil profissional pela web (antes só existia no app Android).
 // Grava só os campos do dono; nota, contadores e verificação nascem zerados (regra nasceZerado).
-import { h, icone, toast, botaoCarregando, vazio } from '../ui.js';
+import { h, icone, toast, botaoCarregando, vazio, acoesConta } from '../ui.js';
 import { categorias } from '../componentes.js';
 import { voltar } from '../app.js';
 
@@ -11,7 +11,7 @@ export default async function telaProfissional({ D, ir }) {
   if (D.estado.visitante) {
     return h('div', h('header.cabecalho', h('div.sobre', 'Para profissionais'), h('h1', 'Ofereça seus serviços')),
       h('section.secao', vazio('🧰', 'Crie sua conta primeiro', 'Com a conta você monta seu perfil profissional em 2 minutos. Sem mensalidade e sem pagar por cliente.',
-        h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis'))));
+        acoesConta(ir))));
   }
   const cats = [...(await categorias()).values()].sort((a, b) => a.nome.localeCompare(b.nome));
   const u = D.estado.usuario;

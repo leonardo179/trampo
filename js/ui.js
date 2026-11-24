@@ -208,3 +208,10 @@ export function esqueletos(n = 4) {
 export function vazio(emo, titulo, texto, acao) {
   return h('div.vazio', h('div.emo', emo), h('h3', titulo), h('p', texto), acao || null);
 }
+
+/** "Criar conta" sempre acompanhado de "Entrar" (quem já tem conta precisa achar onde logar). */
+export function acoesConta(ir, rotulo = 'Criar conta grátis', { largo = false } = {}) {
+  return h('div.acoes-conta', { class: largo ? 'largo' : '' },
+    h('button.botao', { type: 'button', class: largo ? 'largo' : '', onclick: () => ir('/entrar?modo=cadastro') }, rotulo),
+    h('div.ja-tenho', 'Já tem conta? ', h('button.link', { type: 'button', onclick: () => ir('/entrar') }, 'Entrar')));
+}

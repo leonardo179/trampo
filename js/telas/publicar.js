@@ -1,6 +1,6 @@
 // O funil do mural: categoria → serviço → perguntas do serviço → quando/onde/quanto → publicar.
 // Nenhuma resposta é texto livre: o pedido sai sempre no mesmo formato e dá para orçar (Funil.kt).
-import { h, icone, toast, botaoCarregando, vazio } from '../ui.js';
+import { h, icone, toast, botaoCarregando, vazio, acoesConta } from '../ui.js';
 import { categorias, categoriaSinc } from '../componentes.js';
 import { voltar } from '../app.js';
 import * as M from '../motor.js';
@@ -15,7 +15,7 @@ export default async function telaPublicar({ D, params, ir }) {
   if (D.estado.visitante) {
     return h('div', h('header.cabecalho', h('div.sobre', 'Mural'), h('h1', 'Publicar um pedido')),
       h('section.secao', vazio('📋', 'Crie sua conta para publicar', 'Assim quem se oferecer sabe com quem está falando, e você recebe as propostas aqui.',
-        h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis'))));
+        acoesConta(ir))));
   }
 
   const comCats = new Set(funil.servicos.map(s => s.c));

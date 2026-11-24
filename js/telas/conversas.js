@@ -1,4 +1,4 @@
-import { h, avatar, tempoAtras, esqueletos, vazio } from '../ui.js';
+import { h, avatar, tempoAtras, esqueletos, vazio, acoesConta } from '../ui.js';
 
 export default async function telaConversas({ D, ir }) {
   const corpo = h('section.secao', esqueletos(3));
@@ -7,7 +7,7 @@ export default async function telaConversas({ D, ir }) {
       h('div.recado', 'Tudo o que foi combinado fica guardado aqui — é a prova quando algo dá errado.')),
     corpo);
   if (D.estado.visitante) {
-    corpo.replaceChildren(vazio('💬', 'Converse sem passar seu número', 'Crie sua conta para falar com profissionais pelo Trampo.', h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis')));
+    corpo.replaceChildren(vazio('💬', 'Converse sem passar seu número', 'Crie sua conta para falar com profissionais pelo Trampo.', acoesConta(ir)));
     return { el, titulo: 'Conversas' };
   }
   const eu = D.uid();

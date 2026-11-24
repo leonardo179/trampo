@@ -1,4 +1,4 @@
-import { h, icone, tempoAtras, reais, esqueletos, vazio } from '../ui.js';
+import { h, icone, tempoAtras, reais, esqueletos, vazio, acoesConta } from '../ui.js';
 import { categorias, categoriaSinc } from '../componentes.js';
 
 const DIA = 86400000;
@@ -59,7 +59,7 @@ export default async function telaMural({ D, params, ir }) {
     parar?.();
     corpo.replaceChildren(esqueletos(3));
     if (aba === 'meus') {
-      if (D.estado.visitante) { corpo.replaceChildren(vazio('📋', 'Publique o que você precisa', 'Crie sua conta para publicar pedidos e receber propostas.', h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta'))); return; }
+      if (D.estado.visitante) { corpo.replaceChildren(vazio('📋', 'Publique o que você precisa', 'Crie sua conta para publicar pedidos e receber propostas.', acoesConta(ir))); return; }
       parar = D.ouvirMeusPedidos(lista => {
         if (!lista.length) { corpo.replaceChildren(vazio('📋', 'Você ainda não publicou', 'Diga o que precisa em poucos toques, sem escrever nada. Até 5 profissionais se oferecem.', h('a.botao', { href: '#/publicar' }, icone('mais', 'p'), 'Publicar pedido'))); return; }
         corpo.replaceChildren(h('div.lista.grade-2', lista.map(p => cartaoPedido(p, { meu: true }))));

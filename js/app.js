@@ -41,10 +41,12 @@ function montarShell() {
     ABAS.map(([id, href, ic, rot]) =>
       h('a.nav-item', { href, 'data-aba': id }, h('span.bolha', icone(ic)), h('span', rot), h('span.ponto', { hidden: true }))),
     h('div.nav-rodape',
+      h('div.nav-conta'),
       h('a.nav-sobre', { href: '#/sobre' }, h('span.logo-mini', icone('escudo', 'pp')), 'Conheça o Trampo'),
       h('p', 'Contato grátis, sem moeda e sem taxa. Preço e prazo combinados direto com o profissional.'),
       h('div.links-legais', h('a', { href: 'termos.html' }, 'Termos'), ' · ', h('a', { href: 'privacidade.html' }, 'Privacidade'))));
   shell = h('div.shell', nav, conteudo);
+  pintarConta();
 }
 
 function lerHash() {
@@ -119,7 +121,18 @@ window.addEventListener('hashchange', rotear);
 
 /** Contador de não lidas na aba Conversas. */
 let pararConversas = null;
+/** Menu lateral (PC): visitante vê "Entrar" e "Criar conta"; logado vê quem está na conta. */
+function pintarConta() {
+  if (!nav) return;
+  const alvo = nav.querySelector('.nav-conta'); if (!alvo) return;
+  const est = D?.estado;
+  alvo.replaceChildren(...(!est?.usuario ? [] : est.visitante
+    ? [h('a.botao.peq.largo', { href: '#/entrar?modo=cadastro' }, 'Criar conta grátis'), h('a.botao.peq.sec.largo', { href: '#/entrar' }, 'Entrar')]
+    : [h('a.nav-quem', { href: '#/perfil' }, h('b', (est.usuario.nome || '').split(' ')[0]), h('span', est.usuario.email || ''))]));
+}
+
 function ligarContadores() {
+  pintarConta();
   pararConversas?.(); pararConversas = null;
   if (!D.estado.usuario || D.estado.visitante) return;
   pararConversas = D.ouvirConversas(lista => {

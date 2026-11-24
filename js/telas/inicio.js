@@ -61,7 +61,7 @@ export default async function inicio({ D, params, ir }) {
   const el = h('div', cab,
     D.estado.visitante ? h('div.faixa-visitante', icone('info', 'p'),
       h('span', 'Primeira vez aqui? ', h('a', { href: '#/sobre', style: { color: 'inherit', textDecoration: 'underline' } }, 'Conheça o Trampo')),
-      h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta')) : null,
+      h('span.faixa-botoes', h('button.botao.sec', { onclick: () => ir('/entrar') }, 'Entrar'), h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta'))) : null,
     corpo);
 
   // ---------------------------------------------------------------- voz

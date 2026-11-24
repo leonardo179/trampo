@@ -23,7 +23,7 @@ export default async function telaPrestador({ D, args, ir }) {
   async function contatar(canal) {
     if (D.estado.visitante) {
       folha(f => [h('h2', 'Crie sua conta para chamar'), h('p.sub', 'É grátis e leva meio minuto. Assim o profissional sabe quem está chamando e você pode avaliar depois.'),
-        h('div.acoes', h('button.botao.sec', { onclick: f }, 'Agora não'), h('button.botao', { onclick: () => { f(); ir('/entrar?modo=cadastro'); } }, 'Criar conta'))]);
+        h('div.acoes', h('button.botao.sec', { onclick: () => { f(); ir('/entrar'); } }, 'Já tenho conta'), h('button.botao', { onclick: () => { f(); ir('/entrar?modo=cadastro'); } }, 'Criar conta')), h('button.link', { style: { display: 'block', margin: '14px auto 0' }, onclick: f }, 'Agora não')]);
       return;
     }
     if (canal === 'CHAT') {
