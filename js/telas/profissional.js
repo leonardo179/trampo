@@ -1,6 +1,6 @@
 // Criar ou editar o perfil profissional pela web (antes só existia no app Android).
 // Grava só os campos do dono; nota, contadores e verificação nascem zerados (regra nasceZerado).
-import { h, icone, toast, botaoCarregando, vazio, acoesConta } from '../ui.js';
+import { h, icone, toast, botaoCarregando, vazio, acoesConta, folha } from '../ui.js';
 import { categorias } from '../componentes.js';
 import { voltar } from '../app.js';
 
@@ -21,6 +21,8 @@ export default async function telaProfissional({ D, ir }) {
     categoriaId: atual?.categoriaId || null,
     categoriasExtras: [...(atual?.categoriasExtras || [])],
     diasSemana: new Set(atual?.diasSemana || [1, 2, 3, 4, 5]),
+    fotos: [...(atual?.fotos || [])],
+    antesDepois: [...(atual?.antesDepois || [])],
   };
 
   const c = (rot, input, ajuda) => h('div.campo', h('label', rot), input, ajuda ? h('div.ajuda', ajuda) : null);
@@ -81,6 +83,69 @@ export default async function telaProfissional({ D, ir }) {
   }, r)));
   pintarDias();
 
+  // ---------------------------------------------------------------- fotos dos trabalhos
+  // Perfil que já existe grava na hora (a foto aparece no perfil sem precisar de "Salvar");
+  // perfil novo junta tudo e grava ao publicar.
+  const gravarFotos = () => novo ? Promise.resolve() :
+    D.salvarPerfilProfissional({ fotos: st.fotos, antesDepois: st.antesDepois }).catch(x => toast(D.mensagemDeErro(x), 'erro'));
+  const blocoFotos = h('div');
+  const miniatura = (url, aoTirar, rot) => h('div.mini-foto', h('img', { src: url, alt: '', loading: 'lazy' }),
+    rot ? h('span.mini-rot', rot) : null,
+    h('button.mini-x', { type: 'button', 'aria-label': 'Tirar foto', onclick: aoTirar }, icone('x', 'pp')));
+  const pintarFotos = () => {
+    blocoFotos.replaceChildren(
+      h('div.campo', h('label', 'Antes e depois'),
+        h('div.ajuda', 'O que mais convence o cliente: a mesma foto antes e depois do seu serviço.'),
+        st.antesDepois.length ? h('div.pares-mini', st.antesDepois.map((f, i) => h('div.par-mini',
+          miniatura(f.url, () => tirarPar(i), 'Antes'), miniatura(f.urlDepois, () => tirarPar(i), 'Depois')))) : null,
+        h('button.botao.sec.peq', { type: 'button', style: { width: 'fit-content' }, onclick: novoPar }, icone('mais', 'pp'), 'Adicionar antes e depois')),
+      h('div.campo', h('label', 'Fotos de trabalhos feitos'),
+        st.fotos.length ? h('div.grade-mini', st.fotos.map((f, i) => miniatura(f.url, () => tirarFoto(i)))) : null,
+        h('label.botao.sec.peq', { style: { width: 'fit-content', cursor: 'pointer' } }, icone('mais', 'pp'), 'Adicionar fotos',
+          h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: e => enviarVarias(e.target) }))));
+  };
+  async function enviarVarias(input) {
+    const arquivos = [...input.files].slice(0, Math.max(0, 12 - st.fotos.length));
+    input.value = '';
+    if (!arquivos.length) { toast('Até 12 fotos de trabalhos.'); return; }
+    toast(`Enviando ${arquivos.length} foto${arquivos.length > 1 ? 's' : ''}…`);
+    let enviadas = 0;
+    for (const a of arquivos) {
+      try { st.fotos.push({ url: await D.enviarFoto(a), legenda: '', urlDepois: '' }); enviadas++; pintarFotos(); }
+      catch (x) { toast(D.mensagemDeErro(x), 'erro'); }
+    }
+    if (enviadas) { await gravarFotos(); toast(enviadas > 1 ? 'Fotos adicionadas' : 'Foto adicionada', 'ok'); }
+  }
+  function tirarFoto(i) { const [f] = st.fotos.splice(i, 1); pintarFotos(); gravarFotos(); D.apagarFoto(f.url); }
+  function tirarPar(i) { const [f] = st.antesDepois.splice(i, 1); pintarFotos(); gravarFotos(); D.apagarFoto(f.url); D.apagarFoto(f.urlDepois); }
+  function novoPar() {
+    folha(fechar => {
+      const escolha = { antes: null, depois: null };
+      const ok = h('button.botao', { type: 'button', disabled: true }, 'Adicionar');
+      const slot = lado => {
+        const prev = h('div.slot-prev', icone('mais'), h('span', lado === 'antes' ? 'Foto de ANTES' : 'Foto de DEPOIS'));
+        return h('label.slot', prev, h('input', {
+          type: 'file', accept: 'image/*', hidden: true, onchange: e => {
+            const f = e.target.files[0]; if (!f) return;
+            escolha[lado] = f;
+            prev.replaceChildren(h('img', { src: URL.createObjectURL(f), alt: '' }), h('span.mini-rot', lado === 'antes' ? 'Antes' : 'Depois'));
+            ok.disabled = !(escolha.antes && escolha.depois);
+          }
+        }));
+      };
+      const legenda = h('input', { placeholder: 'Ex.: pintura da sala, Pinheiros (opcional)', maxlength: 80 });
+      ok.addEventListener('click', () => botaoCarregando(ok, (async () => {
+        const [antes, depois] = await Promise.all([D.enviarFoto(escolha.antes), D.enviarFoto(escolha.depois)]);
+        st.antesDepois.push({ url: antes, urlDepois: depois, legenda: legenda.value.trim() });
+        pintarFotos(); await gravarFotos(); fechar(); toast('Antes e depois adicionado', 'ok');
+      })().catch(x => toast(D.mensagemDeErro(x), 'erro'))));
+      return [h('h2', 'Antes e depois'), h('p.sub', 'Use fotos do mesmo lugar e do mesmo ângulo. O cliente arrasta para comparar.'),
+        h('div.slots', slot('antes'), slot('depois')), h('div.campo', { style: { marginTop: '12px' } }, legenda),
+        h('div.acoes', h('button.botao.sec', { type: 'button', onclick: fechar }, 'Cancelar'), ok)];
+    });
+  }
+  pintarFotos();
+
   const erro = h('div.erro');
   const salvar = h('button.botao.largo', {
     type: 'submit'
@@ -101,6 +166,7 @@ export default async function telaProfissional({ D, ir }) {
         precoVisita: Math.max(0, +visita.value || 0), precoHora: Math.max(0, +hora.value || 0),
         diasSemana: [...st.diasSemana].sort(), horaInicio: ini.value || '08:00', horaFim: fim.value || '18:00',
         urgencia24h: urg.i.checked, petFriendly: pet.i.checked, disponivel: ativo.i.checked,
+        fotos: st.fotos, antesDepois: st.antesDepois,
       }).then(() => {
         toast(novo ? 'Perfil publicado! Você já aparece na busca.' : 'Perfil atualizado', 'ok');
         ir('/p/' + u.id, { substituir: true });
@@ -123,7 +189,11 @@ export default async function telaProfissional({ D, ir }) {
       h('p', { style: { margin: '0 0 12px', fontSize: '13.5px', color: 'var(--texto-2)' } }, 'Mostrar um valor de partida atrai mais clientes. O preço final é sempre combinado com o cliente.'),
       h('div.duas', c('Visita / orçamento', visita), c('Por hora', hora))),
     h('div.cartao',
-      h('h2.titulo-bloco', '4. Contato'),
+      h('h2.titulo-bloco', '4. Fotos dos seus trabalhos'),
+      h('p', { style: { margin: '0 0 12px', fontSize: '13.5px', color: 'var(--texto-2)' } }, 'Perfis com fotos recebem muito mais contatos. Foto do celular serve: o Trampo reduz o tamanho sozinho.'),
+      blocoFotos),
+    h('div.cartao',
+      h('h2.titulo-bloco', '5. Contato'),
       c('WhatsApp', tel), oculto.el, ativo.el),
     h('div.honesto', h('span', '🤝'), h('div', h('b', 'Sem mensalidade, sem moeda, sem taxa por cliente.'),
       'Sua nota e sua taxa de resposta vêm só do que os clientes dizem depois de falar com você.')),

@@ -93,7 +93,7 @@ export default function acesso({ D, ir, params }) {
 
   return h('div.acesso',
     h('section.acesso-arte',
-      h('a', { href: '#/', style: { display: 'inline-block', marginBottom: '22px', position: 'relative', zIndex: 1 } }, logo(56)),
+      h('a', { href: '#/', style: { display: 'inline-block', marginBottom: '22px', position: 'relative', zIndex: 1 } }, logo(56, { cor: '#fff' })),
       h('h1', 'Quem precisa encontra quem faz.'),
       h('p', 'Eletricista, encanador, diarista e mais de 100 serviços perto de você. Escreva o problema do seu jeito — o Trampo entende.'),
       h('div.promessas',

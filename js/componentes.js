@@ -82,9 +82,19 @@ export function cartaoPrestador(D, p, { distancia = null, ir } = {}) {
           ? [h('span.estrela', '★'), h('b', nota1(p.notaMedia || 0)), h('span', { style: { color: 'var(--texto-3)' } }, `(${p.totalAvaliacoes} avaliaç${p.totalAvaliacoes === 1 ? 'ão' : 'ões'})`)]
           : h('span', { style: { color: 'var(--texto-3)' } }, 'Novo no Trampo')),
       resto.length ? h('div.disc', resto.map((r, i) => i ? h('span.ponto-sep', r) : h('span', r))) : null,
-      ausente(p) ? h('div.disc', { style: { color: 'var(--alerta)' } }, 'Ausente por um tempo') : null),
+      ausente(p) ? h('div.disc', { style: { color: 'var(--alerta)' } }, 'Ausente por um tempo') : null,
+      miniaturasTrabalho(p)),
     botaoFavorito(D, p));
   return a;
+}
+
+/** Até 4 miniaturas dos trabalhos no cartão da lista (o "depois" de cada antes/depois primeiro). */
+function miniaturasTrabalho(p) {
+  const urls = [...(p.antesDepois || []).map(f => f.urlDepois), ...(p.fotos || []).map(f => f.url)].filter(Boolean);
+  if (!urls.length) return null;
+  const mostrar = urls.slice(0, 4);
+  return h('div.trab-mini', mostrar.map((u, i) => h('span', h('img', { src: u, alt: '', loading: 'lazy', decoding: 'async' }),
+    i === mostrar.length - 1 && urls.length > mostrar.length ? h('b', `+${urls.length - mostrar.length}`) : null)));
 }
 
 export function estrelas(n) {

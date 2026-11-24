@@ -37,7 +37,7 @@ const rolagens = new Map();
 function montarShell() {
   conteudo = h('main.conteudo#conteudo', { tabindex: '-1' });
   nav = h('nav.nav', { 'aria-label': 'Navegação principal' },
-    h('a.nav-marca', { href: '#/' }, logo(36), 'Trampo'),
+    h('a.nav-marca', { href: '#/', 'aria-label': 'Trampo, início' }, logo(38), h('span.palavra', 'trampo')),
     ABAS.map(([id, href, ic, rot]) =>
       h('a.nav-item', { href, 'data-aba': id }, h('span.bolha', icone(ic)), h('span', rot), h('span.ponto', { hidden: true }))),
     h('div.nav-rodape',

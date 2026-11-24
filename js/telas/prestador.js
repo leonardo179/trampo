@@ -4,6 +4,7 @@ import {
   atendeAgora, ausente, botaoFavorito, estrelas, distanciaKm, kmTexto,
 } from '../componentes.js';
 import { voltar } from '../app.js';
+import { portfolio } from '../galeria.js';
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -39,9 +40,12 @@ export default async function telaPrestador({ D, args, ir }) {
     } else location.href = `tel:+${numero}`;
   }
   const podeTelefone = telefone.length >= 10 && !p.telefoneOculto;
-  const botoesContato = (cls = '') => [
-    podeTelefone ? h('button.botao.zap', { class: cls, onclick: () => contatar('WHATSAPP') }, icone('zap', 'p'), 'WhatsApp') : null,
-    h('button.botao', { class: podeTelefone ? cls + ' sec' : cls, onclick: () => contatar('CHAT') }, icone('chat', 'p'), 'Conversar'),
+  // A conversa pelo Trampo vem primeiro: fica registrado o combinado e o app mede sozinho quem
+  // responde e em quanto tempo. O WhatsApp continua lá, como opção secundária.
+  const botoesContato = (cls = '', compacto = false) => [
+    h('button.botao', { class: cls, onclick: () => contatar('CHAT') }, icone('chat', 'p'), 'Conversar pelo Trampo'),
+    podeTelefone ? h('button.botao.zap-sec', { class: compacto ? '' : cls, 'aria-label': 'Chamar no WhatsApp', onclick: () => contatar('WHATSAPP') },
+      icone('zap', 'p'), compacto ? null : 'WhatsApp') : null,
   ];
 
   // ---------------------------------------------------------------- números
@@ -93,7 +97,7 @@ export default async function telaPrestador({ D, args, ir }) {
 
     p.descricao ? h('div.cartao', h('h2', { style: { fontSize: '16px', margin: '0 0 8px' } }, 'Sobre'), h('p.texto-longo', p.descricao)) : null,
 
-    galeria(p),
+    portfolio(p),
     h('div', { id: 'avaliacoes' }),
     h('div', { id: 'perguntas' }));
 
@@ -110,7 +114,7 @@ export default async function telaPrestador({ D, args, ir }) {
       ehMeu ? h('div', { style: { display: 'grid', gap: '10px' } },
         h('div.honesto', h('span', '👤'), h('div', h('b', 'Este é o seu perfil'), 'É assim que os clientes veem você.')),
         h('a.botao.sec.largo', { href: '#/profissional' }, 'Editar perfil profissional'))
-        : h('div', { style: { display: 'grid', gap: '8px' } }, h('div.so-pc.grade', botoesContato('largo')), h('div#avaliar-slot')),
+        : h('div', { style: { display: 'grid', gap: '8px' } }, h('div.so-pc.grade', botoesContato('largo'), h('div.nota-chat', 'Pelo Trampo fica registrado o que vocês combinarem.')), h('div#avaliar-slot')),
       h('div', { style: { marginTop: '14px' } },
         h('div.info-linha', icone('calendario', 'p'),
           (p.diasSemana || [1, 2, 3, 4, 5]).sort().map(d => DIAS[d % 7]).join(', ') + ` · ${p.horaInicio || '08:00'}–${p.horaFim || '18:00'}`),
@@ -120,7 +124,7 @@ export default async function telaPrestador({ D, args, ir }) {
       h('b', { style: { color: 'var(--texto)' } }, 'Como funciona a taxa de resposta'), h('br'),
       'Depois de cada contato, perguntamos ao cliente se o profissional respondeu. O número sai dessas respostas, não do que o profissional diz.'));
 
-  const barraCel = ehMeu ? null : h('div.barra-acao', botoesContato());
+  const barraCel = ehMeu ? null : h('div.barra-acao', botoesContato('', true));
 
   const el = h('div', topo, h('div.detalhe', principal, lado), barraCel,
     h('div.so-cel', { style: { height: '80px' } }));
@@ -176,12 +180,4 @@ export default async function telaPrestador({ D, args, ir }) {
   });
 
   return { el, titulo: p.nome };
-}
-
-function galeria(p) {
-  const fotos = [...(p.fotos || []), ...(p.antesDepois || [])].filter(f => f.url);
-  if (!fotos.length) return null;
-  return h('div.cartao', h('h2', { style: { fontSize: '16px', margin: '0 0 10px' } }, 'Trabalhos'),
-    h('div.galeria', fotos.slice(0, 12).map(f => h('button', { 'aria-label': f.legenda || 'Foto do trabalho', onclick: () => visorDeImagem(f.url, f.legenda) },
-      h('img', { src: f.url, alt: f.legenda || '', loading: 'lazy', decoding: 'async' })))));
 }

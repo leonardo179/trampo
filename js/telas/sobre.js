@@ -59,7 +59,7 @@ export default async function telaSobre({ D }) {
       h('header.cabecalho.hero',
         vitrine,
         h('div', { style: { position: 'relative', zIndex: 1 } },
-          logo(52),
+          h('div.hero-marca', logo(52, { cor: '#fff' }), h('span.palavra', 'trampo')),
           h('h1', 'O jeito honesto de contratar um profissional.'),
           h('p.hero-sub', 'O Trampo conecta quem precisa de um serviço com quem faz — sem cobrar por contato e mostrando, com números medidos, quem responde e quem cumpre o combinado.'),
           h('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' } },

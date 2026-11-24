@@ -454,3 +454,41 @@ export async function meuContatoCom(prestadorId) {
   try { const s = await getDoc(doc(db, 'contatos', `${id}_${prestadorId}`)); return s.exists() ? { id: s.id, ...s.data() } : null; }
   catch { return null; }
 }
+
+// ------------------------------------------------------------------ fotos (Storage)
+let storageMod = null;
+async function storage() {
+  if (!storageMod) {
+    const S = await import(`${B}/firebase-storage.js`);
+    storageMod = { S, st: S.getStorage(app) };
+  }
+  return storageMod;
+}
+
+/** Reduz no navegador (lado maior 1600 px, JPEG 80%), igual ao Compressor.kt do app. */
+async function reduzir(arquivo, lado = 1600) {
+  const bmp = await createImageBitmap(arquivo, { imageOrientation: 'from-image' }).catch(() => null);
+  if (!bmp) return arquivo;
+  const k = Math.min(1, lado / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+}
+
+/** Envia uma foto para `<pasta>/<uid>/<data>` (regra do storage.rules) e devolve a URL pública. */
+export async function enviarFoto(arquivo, pasta = 'trabalhos') {
+  const id = uid(); if (!id || estado.visitante) throw new Error('Entre na sua conta');
+  if (!arquivo.type.startsWith('image/')) throw new Error('Escolha um arquivo de imagem.');
+  const { S, st } = await storage();
+  const blob = await reduzir(arquivo);
+  if (blob.size > 8 * 1024 * 1024) throw new Error('A foto passou de 8 MB mesmo reduzida.');
+  const ref = S.ref(st, `${pasta}/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await S.uploadBytes(ref, blob, { contentType: 'image/jpeg' });
+  return await S.getDownloadURL(ref);
+}
+
+/** Apaga o arquivo do Storage (melhor esforço: a foto some do perfil mesmo se falhar). */
+export async function apagarFoto(url) {
+  try { const { S, st } = await storage(); await S.deleteObject(S.ref(st, url)); } catch { /* fica órfão, sem dano */ }
+}

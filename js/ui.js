@@ -79,10 +79,13 @@ export function icone(nome, cls = '') {
 }
 
 // ------------------------------------------------------------------ marca
-export const LOGO_SVG = (id = 'lg') => `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B6DFF"/><stop offset="1" stop-color="#5B3FD9"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#${id})"/><path d="M18 22h28" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M32 22v24" stroke="#fff" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="44" r="6" fill="#22D3A8" stroke="#fff" stroke-width="2.5"/></svg>`;
+export const BALAO = 'M19 5h26a14 14 0 0 1 14 14v18a14 14 0 0 1-4.2 10v9.3a2.2 2.2 0 0 1-3.5 1.8L41.5 51H19A14 14 0 0 1 5 37V19A14 14 0 0 1 19 5z';
+export const TE = 'M29.5 13v23.5a8 8 0 0 0 8 8h3.5M22 23.5h15';
+/** A marca: balão de conversa com o "t" vazado e o ponto verde-água de "respondeu". */
+export const LOGO_SVG = (id = 'lg', { ponto = true, cor = null } = {}) => `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B6DFF"/><stop offset="1" stop-color="#5B3FD9"/></linearGradient><mask id="m${id}"><rect width="64" height="64" fill="#fff"/><path d="${TE}" fill="none" stroke="#000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="${BALAO}" fill="${cor || `url(#g${id})`}" mask="url(#m${id})"/>${ponto ? '<circle cx="54" cy="10" r="7" fill="#22D3A8" stroke="#fff" stroke-width="3"/>' : ''}</svg>`;
 let nLogo = 0;
-export function logo(tam = 36) {
-  return h('span.logo', { style: { width: tam + 'px', height: tam + 'px' }, html: LOGO_SVG('lg' + (nLogo++)) });
+export function logo(tam = 36, opcoes = {}) {
+  return h('span.logo', { style: { width: tam + 'px', height: tam + 'px' }, html: LOGO_SVG('lg' + (nLogo++), opcoes) });
 }
 
 // ------------------------------------------------------------------ toasts

@@ -113,5 +113,7 @@ export function ordenar(res, ordem) {
 export function destaques(todos, usuario, n) {
   let r = aplicarKt(todos, { cidade: usuario.cidade || '', lat: usuario.lat ?? null, lng: usuario.lng ?? null, notaMinima: 4 });
   if (r.length < n) r = aplicarKt(todos, { notaMinima: 4 });
-  return r.slice(0, n);
+  // Entre os 30 mais indicados, quem tem fotos de trabalho aparece primeiro na vitrine.
+  const temFoto = x => ((x.prestador.fotos || []).length + (x.prestador.antesDepois || []).length) > 0 ? 1 : 0;
+  return r.slice(0, 30).map((x, i) => [x, i]).sort((a, b) => temFoto(b[0]) - temFoto(a[0]) || a[1] - b[1]).slice(0, n).map(a => a[0]);
 }

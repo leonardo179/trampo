@@ -1,9 +1,9 @@
 // Service worker: casca do app em cache (abre na hora, até sem rede) e o vocabulário
 // guardado depois da primeira visita. Dados do Firebase NÃO passam por aqui (o SDK tem cache próprio).
-const VERSAO = 'trampo-v2';
+const VERSAO = 'trampo-v3';
 const CASCA = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'img/icone.svg', 'img/icone-192.png',
-  'js/app.js', 'js/ui.js', 'js/dados.js', 'js/componentes.js', 'js/motor.js', 'js/reputacao.js', 'js/posContato.js',
+  'js/app.js', 'js/ui.js', 'js/dados.js', 'js/componentes.js', 'js/motor.js', 'js/reputacao.js', 'js/posContato.js', 'js/galeria.js',
   'data/categorias.json',
 ];
 
