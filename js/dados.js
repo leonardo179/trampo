@@ -1,0 +1,356 @@
+// Acesso ao Firebase (mesmo projeto e mesmas regras do app Android: trampo-bc061).
+// Espelha o RepositorioFirebase.kt — mesmos nomes de coleção e de campo.
+const V = '13.4.0';
+const B = `https://www.gstatic.com/firebasejs/${V}`;
+const [{ initializeApp }, A, F] = await Promise.all([
+  import(`${B}/firebase-app.js`),
+  import(`${B}/firebase-auth.js`),
+  import(`${B}/firebase-firestore.js`),
+]);
+
+const app = initializeApp({
+  apiKey: 'AIzaSyCCFUnsjmTOESefSPJsRUjoMeH-oUCKPXw',
+  authDomain: 'trampo-bc061.firebaseapp.com',
+  projectId: 'trampo-bc061',
+  storageBucket: 'trampo-bc061.firebasestorage.app',
+  messagingSenderId: '471784701420',
+  appId: '1:471784701420:web:6ac940258bedc1a473d4c9',
+});
+const auth = A.getAuth(app);
+let db;
+try {
+  // Cache no IndexedDB: a segunda visita abre com a vitrine já na memória, e várias abas
+  // dividem o mesmo cache.
+  db = F.initializeFirestore(app, {
+    localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }),
+  });
+} catch { db = F.getFirestore(app); }
+
+const { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, limit, onSnapshot, increment, orderBy, limitToLast } = F;
+const col = n => collection(db, n);
+
+// ------------------------------------------------------------------ estado
+const ouvintes = new Set();
+export const estado = {
+  usuario: null,       // documento de usuarios/ (ou {id, nome:'Visitante'})
+  visitante: false,
+  favoritos: new Set(),
+  pronto: false,
+};
+export function aoMudar(fn) { ouvintes.add(fn); return () => ouvintes.delete(fn); }
+function avisar() { ouvintes.forEach(f => f(estado)); }
+
+export const uid = () => auth.currentUser?.uid || null;
+
+// ------------------------------------------------------------------ conta
+const ERROS = {
+  'auth/invalid-credential': 'E-mail ou senha incorretos.',
+  'auth/wrong-password': 'E-mail ou senha incorretos.',
+  'auth/user-not-found': 'Não existe conta com esse e-mail.',
+  'auth/invalid-email': 'Esse e-mail não parece válido.',
+  'auth/email-already-in-use': 'Já existe uma conta com esse e-mail. Tente entrar.',
+  'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+  'auth/too-many-requests': 'Muitas tentativas. Espere um pouco e tente de novo.',
+  'auth/network-request-failed': 'Sem conexão. Confira a internet.',
+  'permission-denied': 'Sem permissão para isso.',
+};
+export function mensagemDeErro(e) {
+  return ERROS[e?.code] || e?.message?.replace(/^Firebase: /, '') || 'Algo deu errado. Tente de novo.';
+}
+
+async function carregarUsuario(id) {
+  const s = await getDoc(doc(db, 'usuarios', id));
+  return s.exists() ? s.data() : null;
+}
+async function carregarFavoritos() {
+  const id = uid(); if (!id) return;
+  try {
+    const s = await getDocs(collection(db, 'usuarios', id, 'favoritos'));
+    estado.favoritos = new Set(s.docs.map(d => d.id));
+  } catch { estado.favoritos = new Set(); }
+}
+
+/** Resolve quando a sessão inicial é conhecida (logado, visitante ou fora). */
+export const sessaoPronta = new Promise(res => {
+  const parar = A.onAuthStateChanged(auth, async u => {
+    parar();
+    try {
+      if (u?.isAnonymous) {
+        estado.usuario = { id: u.uid, nome: 'Visitante' }; estado.visitante = true;
+      } else if (u) {
+        estado.usuario = await carregarUsuario(u.uid);
+        if (estado.usuario?.banido) { await A.signOut(auth); estado.usuario = null; }
+        else if (estado.usuario) carregarFavoritos().then(avisar);
+      }
+    } catch { /* sem rede na abertura: segue como deslogado e a tela de acesso tenta de novo */ }
+    estado.pronto = true; avisar(); res(estado);
+  });
+});
+
+export async function entrar(email, senha) {
+  await A.signInWithEmailAndPassword(auth, email.trim(), senha);
+  const u = await carregarUsuario(auth.currentUser.uid);
+  if (!u) { await A.signOut(auth); throw new Error('Conta sem cadastro. Refaça o cadastro.'); }
+  if (u.banido) { await A.signOut(auth); throw new Error('Esta conta está bloqueada.'); }
+  estado.usuario = u; estado.visitante = false;
+  await carregarFavoritos();
+  avisar();
+  return u;
+}
+
+export async function cadastrar(dados, senha, categoriaInicial = null) {
+  const atual = auth.currentUser;
+  let cred;
+  // Visitante que resolve se cadastrar: a conta anônima vira a conta de verdade (mesmo id).
+  if (atual?.isAnonymous) {
+    cred = await A.linkWithCredential(atual, A.EmailAuthProvider.credential(dados.email.trim(), senha));
+  } else {
+    cred = await A.createUserWithEmailAndPassword(auth, dados.email.trim(), senha);
+  }
+  const id = cred.user.uid;
+  const agora = Date.now();
+  const u = {
+    id, nome: dados.nome.trim(), email: dados.email.trim().toLowerCase(), telefone: dados.telefone || '',
+    cidade: dados.cidade || '', estado: dados.estado || '', bairro: dados.bairro || '',
+    lat: null, lng: null, fotoUrl: '', ehPrestador: categoriaInicial != null, admin: false,
+    suspenso: false, banido: false, aparelho: 'web', criadoEm: agora,
+    termosVersao: 1, termosAceitosEm: agora, telefoneConfirmado: false,
+  };
+  await setDoc(doc(db, 'usuarios', id), u);
+  estado.usuario = u; estado.visitante = false;
+  avisar();
+  return u;
+}
+
+export async function entrarComoVisitante() {
+  const atual = auth.currentUser;
+  const id = atual?.isAnonymous ? atual.uid : (await A.signInAnonymously(auth)).user.uid;
+  estado.usuario = { id, nome: 'Visitante' }; estado.visitante = true; estado.favoritos = new Set();
+  avisar();
+}
+
+export const recuperarSenha = email => A.sendPasswordResetEmail(auth, email.trim());
+
+export async function sair() {
+  await A.signOut(auth);
+  estado.usuario = null; estado.visitante = false; estado.favoritos = new Set();
+  cachePrestadores = null;
+  avisar();
+}
+
+export async function salvarUsuario(campos) {
+  const id = uid();
+  await updateDoc(doc(db, 'usuarios', id), campos);
+  estado.usuario = { ...estado.usuario, ...campos };
+  avisar();
+}
+
+// ------------------------------------------------------------------ vitrine
+let cachePrestadores = null;
+/**
+ * A vitrine inteira de uma vez (a base cabe folgada: o app Android pede limit 300 por busca).
+ * Uma leitura só, e toda a filtragem acontece no navegador — busca instantânea a cada tecla.
+ */
+export function prestadores() {
+  if (!cachePrestadores) {
+    cachePrestadores = getDocs(query(col('prestadores'), where('disponivel', '==', true), limit(400)))
+      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() })))
+      .catch(e => { cachePrestadores = null; throw e; });
+  }
+  return cachePrestadores;
+}
+
+export async function prestador(id) {
+  const lista = cachePrestadores ? await cachePrestadores.catch(() => []) : [];
+  const achado = lista.find(p => p.id === id);
+  if (achado) return achado;
+  const s = await getDoc(doc(db, 'prestadores', id));
+  return s.exists() ? { id: s.id, ...s.data() } : null;
+}
+
+const visitados = new Set();
+export function registrarVisita(id) {
+  const eu = uid();
+  if (!eu || id === eu || visitados.has(id)) return;
+  visitados.add(id);
+  updateDoc(doc(db, 'prestadores', id), { visualizacoes: increment(1) }).catch(() => {});
+}
+
+export async function avaliacoesDe(prestadorId) {
+  const s = await getDocs(query(col('avaliacoes'), where('prestadorId', '==', prestadorId), limit(200)));
+  return s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm - a.criadoEm);
+}
+
+export async function perguntasDe(prestadorId) {
+  try {
+    const s = await getDocs(query(col('perguntas'), where('prestadorId', '==', prestadorId), limit(60)));
+    return s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm - a.criadoEm);
+  } catch { return []; }
+}
+
+export async function favoritar(prestadorId, marcar) {
+  const id = uid(); if (!id || estado.visitante) throw new Error('Crie sua conta para salvar favoritos.');
+  const ref = doc(db, 'usuarios', id, 'favoritos', prestadorId);
+  if (marcar) { estado.favoritos.add(prestadorId); avisar(); await setDoc(ref, { em: Date.now() }); }
+  else { estado.favoritos.delete(prestadorId); avisar(); await deleteDoc(ref); }
+}
+
+/** Mesmo registro do app: libera a avaliação depois e alimenta a taxa de resposta. */
+export async function registrarContato(p, canal) {
+  const id = uid(); if (!id) throw new Error('Entre na sua conta');
+  const chave = `${id}_${p.id}`;
+  const ref = doc(db, 'contatos', chave);
+  const existe = await getDoc(ref);
+  if (!existe.exists()) {
+    await setDoc(ref, {
+      id: chave, clienteId: id, prestadorId: p.id, canal, criadoEm: Date.now(),
+      respondeu: null, respondeuRapido: false, compareceu: null, precoCumpriu: null, avaliado: false,
+    });
+  }
+  const campos = { contatosRecebidos: increment(1) };
+  if (canal === 'WHATSAPP') campos.cliquesZap = increment(1);
+  if (canal === 'LIGACAO') campos.cliquesLigar = increment(1);
+  updateDoc(doc(db, 'prestadores', p.id), campos).catch(() => {});
+}
+
+// ------------------------------------------------------------------ mural
+export function ouvirMural(fn, erro) {
+  return onSnapshot(query(col('pedidos'), where('encerrado', '==', false), limit(200)),
+    s => fn(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro);
+}
+export function ouvirMeusPedidos(fn) {
+  const id = uid(); if (!id) { fn([]); return () => {}; }
+  return onSnapshot(query(col('pedidos'), where('clienteId', '==', id)),
+    s => fn(s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm - a.criadoEm)), () => fn([]));
+}
+
+export async function publicarPedido(p) {
+  const u = estado.usuario;
+  if (!u || estado.visitante) throw new Error('Crie sua conta para publicar.');
+  const ref = doc(col('pedidos'));
+  let anteriores = [];
+  try { anteriores = (await getDocs(query(col('pedidos'), where('clienteId', '==', u.id)))).docs.map(d => d.data()); } catch {}
+  const novo = {
+    lat: null, lng: null, orcamentoAte: 0, interessados: 0, escolhidoId: '', escolhidoNome: '',
+    concluidoEm: 0, fotos: [], videoUrl: '', estado: u.estado || '',
+    ...p,
+    id: ref.id, clienteId: u.id, clienteNome: u.nome,
+    clientePedidosAntes: anteriores.length,
+    clienteFechadosAntes: anteriores.filter(x => x.encerrado).length,
+    // Telefone só vai no documento se a pessoa aceitou ser chamada direto (igual ao app).
+    clienteTelefone: p.podemChamarDireto ? (u.telefone || '') : '',
+    criadoEm: Date.now(), encerrado: false,
+  };
+  await setDoc(ref, novo);
+  return ref.id;
+}
+
+export const encerrarPedido = id => updateDoc(doc(db, 'pedidos', id), { encerrado: true });
+
+export async function interessadosDoPedido(pedidoId) {
+  const s = await getDocs(query(col('interesses'), where('pedidoId', '==', pedidoId), limit(30)));
+  const props = s.docs.map(d => d.data());
+  const lista = await Promise.all(props.map(async i => ({ interesse: i, prestador: await prestador(i.prestadorId) })));
+  return lista.filter(x => x.prestador);
+}
+
+export async function demonstrarInteresse(pedido, proposta = {}) {
+  const id = uid();
+  if (!id || estado.visitante) throw new Error('Entre na sua conta');
+  if (pedido.clienteId === id) throw new Error('Este pedido é seu.');
+  const chave = `${pedido.id}_${id}`;
+  if ((await getDoc(doc(db, 'interesses', chave))).exists()) return;
+  const atual = (await getDoc(doc(db, 'pedidos', pedido.id))).data() || pedido;
+  if (atual.encerrado) throw new Error('Esse pedido já foi encerrado.');
+  if ((atual.interessados || 0) >= 5) throw new Error('Esse pedido já tem 5 profissionais. O cliente está escolhendo.');
+  await setDoc(doc(db, 'interesses', chave), {
+    id: chave, pedidoId: pedido.id, prestadorId: id, criadoEm: Date.now(),
+    precoDe: proposta.precoDe || 0, precoAte: proposta.precoAte || 0, prazo: proposta.prazo || '',
+  });
+  await updateDoc(doc(db, 'pedidos', pedido.id), { interessados: increment(1) });
+}
+
+// ------------------------------------------------------------------ conversas
+export function ouvirConversas(fn) {
+  const id = uid(); if (!id) { fn([]); return () => {}; }
+  return onSnapshot(query(col('conversas'), where('participantes', 'array-contains', id), limit(200)),
+    s => fn(s.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => Math.max(b.ultimaEm || 0, b.criadoEm || 0) - Math.max(a.ultimaEm || 0, a.criadoEm || 0))),
+    () => fn([]));
+}
+
+export function ouvirMensagens(conversaId, fn) {
+  return onSnapshot(query(collection(db, 'conversas', conversaId, 'mensagens'), orderBy('criadoEm', 'asc'), limitToLast(300)),
+    s => fn(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => fn([]));
+}
+
+export async function conversa(id) {
+  const s = await getDoc(doc(db, 'conversas', id));
+  return s.exists() ? { id: s.id, ...s.data() } : null;
+}
+
+export async function abrirConversa(prestador, assunto = '') {
+  const u = estado.usuario;
+  if (!u || estado.visitante) throw new Error('Crie sua conta para conversar.');
+  if (u.id === prestador.id) throw new Error('Esse perfil é seu.');
+  const id = `${u.id}_${prestador.id}`;
+  const ref = doc(db, 'conversas', id);
+  const existe = (await getDoc(ref)).exists();
+  if (!existe) {
+    await setDoc(ref, {
+      id, participantes: [u.id, prestador.id], clienteId: u.id, clienteNome: u.nome,
+      prestadorId: prestador.id, prestadorNome: prestador.nome, assunto,
+      ultimaMensagem: '', ultimoAutor: '', ultimaEm: 0, naoLidasCliente: 0, naoLidasPrestador: 0,
+      lidaClienteEm: 0, lidaPrestadorEm: 0, primeiraClienteEm: 0, respondidaEm: 0,
+      tempoContado: false, criadoEm: Date.now(),
+    });
+  } else if (assunto) updateDoc(ref, { assunto }).catch(() => {});
+  return id;
+}
+
+export async function enviarMensagem(conversaId, texto) {
+  const eu = uid();
+  const t = texto.trim().slice(0, 2000);
+  if (!t) return;
+  const ref = doc(db, 'conversas', conversaId);
+  const c = (await getDoc(ref)).data();
+  if (!c) throw new Error('Conversa não encontrada');
+  const agora = Date.now();
+  const m = doc(collection(db, 'conversas', conversaId, 'mensagens'));
+  await setDoc(m, { id: m.id, conversaId, autorId: eu, texto: t, fotoUrl: '', tipo: 'TEXTO', criadoEm: agora, valor: 0, prazo: '', garantiaDias: 0, refId: '' });
+  const souPrest = c.prestadorId === eu;
+  await updateDoc(ref, {
+    ultimaMensagem: t.replace(/\n/g, ' ').slice(0, 140), ultimoAutor: eu, ultimaEm: agora,
+    [souPrest ? 'naoLidasCliente' : 'naoLidasPrestador']: increment(1),
+    [souPrest ? 'lidaPrestadorEm' : 'lidaClienteEm']: agora,
+  });
+  const marco = !souPrest && !c.primeiraClienteEm ? 'primeiraClienteEm'
+    : souPrest && !c.respondidaEm && c.primeiraClienteEm ? 'respondidaEm' : null;
+  if (marco) updateDoc(ref, { [marco]: agora }).catch(() => {});
+  const naoLidasDoOutro = souPrest ? c.naoLidasCliente : c.naoLidasPrestador;
+  if (!naoLidasDoOutro) {
+    const meuNome = (souPrest ? c.prestadorNome : c.clienteNome) || '';
+    setDoc(doc(col('avisos')), {
+      usuarioId: souPrest ? c.clienteId : c.prestadorId, tipo: 'MENSAGEM',
+      titulo: 'Nova mensagem' + (meuNome ? ' de ' + meuNome.split(' ')[0] : ''),
+      texto: t.slice(0, 140), alvoId: conversaId, criadoEm: agora, lido: false,
+    }).catch(() => {});
+  }
+}
+
+export async function marcarConversaLida(c) {
+  const eu = uid();
+  const souPrest = c.prestadorId === eu;
+  const nao = souPrest ? c.naoLidasPrestador : c.naoLidasCliente;
+  if (!nao) return;
+  updateDoc(doc(db, 'conversas', c.id), {
+    [souPrest ? 'naoLidasPrestador' : 'naoLidasCliente']: 0,
+    [souPrest ? 'lidaPrestadorEm' : 'lidaClienteEm']: Date.now(),
+  }).catch(() => {});
+}
+
+export async function meuPerfilProfissional() {
+  const id = uid(); if (!id) return null;
+  try { const s = await getDoc(doc(db, 'prestadores', id)); return s.exists() ? { id, ...s.data() } : null; }
+  catch { return null; }
+}

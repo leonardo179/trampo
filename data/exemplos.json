@@ -1,0 +1,482 @@
+[
+ {
+  "id": 46,
+  "texto": "festa semana que vem"
+ },
+ {
+  "id": 73,
+  "texto": "tenho muito material bruto e nao sei editar"
+ },
+ {
+  "id": 55,
+  "texto": "preciso de entrega urgente"
+ },
+ {
+  "id": 83,
+  "texto": "unha do pe encravada doendo"
+ },
+ {
+  "id": 60,
+  "texto": "persiana nao desce"
+ },
+ {
+  "id": 15,
+  "texto": "forro de gesso rachado"
+ },
+ {
+  "id": 45,
+  "texto": "preciso de som pra festa"
+ },
+ {
+  "id": 30,
+  "texto": "foto de celular ruim"
+ },
+ {
+  "id": 61,
+  "texto": "toldo rasgou"
+ },
+ {
+  "id": 17,
+  "texto": "maquina de lavar nao liga"
+ },
+ {
+  "id": 104,
+  "texto": "danca de salao pra iniciante"
+ },
+ {
+  "id": 67,
+  "texto": "multa que nao e minha"
+ },
+ {
+  "id": 2,
+  "texto": "vazamento na pia"
+ },
+ {
+  "id": 49,
+  "texto": "cheiro de gas"
+ },
+ {
+  "id": 97,
+  "texto": "drink para cinquenta pessoas"
+ },
+ {
+  "id": 92,
+  "texto": "poeira depois da reforma"
+ },
+ {
+  "id": 20,
+  "texto": "unha quebrada"
+ },
+ {
+  "id": 79,
+  "texto": "cachorro precisa de banho"
+ },
+ {
+  "id": 98,
+  "texto": "salgadinho para cem pessoas"
+ },
+ {
+  "id": 48,
+  "texto": "gato doente"
+ },
+ {
+  "id": 30,
+  "texto": "preciso de foto boa"
+ },
+ {
+  "id": 6,
+  "texto": "roupa amassada"
+ },
+ {
+  "id": 40,
+  "texto": "portao nao abre"
+ },
+ {
+  "id": 96,
+  "texto": "cama elastica para o domingo"
+ },
+ {
+  "id": 53,
+  "texto": "preciso emagrecer"
+ },
+ {
+  "id": 16,
+  "texto": "agua verde"
+ },
+ {
+  "id": 89,
+  "texto": "bicicleta com pneu murcho"
+ },
+ {
+  "id": 66,
+  "texto": "preciso de laudo de engenheiro"
+ },
+ {
+  "id": 22,
+  "texto": "sobrancelha falhada"
+ },
+ {
+  "id": 102,
+  "texto": "entulho na calçada"
+ },
+ {
+  "id": 75,
+  "texto": "goteira na sala"
+ },
+ {
+  "id": 93,
+  "texto": "violao para iniciante"
+ },
+ {
+  "id": 52,
+  "texto": "dor lombar"
+ },
+ {
+  "id": 96,
+  "texto": "cama elastica para o sabado"
+ },
+ {
+  "id": 106,
+  "texto": "nao sei me vestir"
+ },
+ {
+  "id": 56,
+  "texto": "carro muito sujo"
+ },
+ {
+  "id": 4,
+  "texto": "mato alto"
+ },
+ {
+  "id": 69,
+  "texto": "quero fazer uma tatuagem pequena"
+ },
+ {
+  "id": 80,
+  "texto": "cachorro latindo o dia todo"
+ },
+ {
+  "id": 48,
+  "texto": "cachorro doente"
+ },
+ {
+  "id": 68,
+  "texto": "meu armario esta um caos"
+ },
+ {
+  "id": 54,
+  "texto": "preciso de alguem pra aplicar injecao"
+ },
+ {
+  "id": 67,
+  "texto": "caiu uma multa que nao foi minha"
+ },
+ {
+  "id": 50,
+  "texto": "fui mandado embora sem receber"
+ },
+ {
+  "id": 23,
+  "texto": "pele com espinha"
+ },
+ {
+  "id": 95,
+  "texto": "meu filho fala pouco"
+ },
+ {
+  "id": 101,
+  "texto": "dente doendo muito"
+ },
+ {
+  "id": 27,
+  "texto": "logo feio"
+ },
+ {
+  "id": 34,
+  "texto": "minha mae precisa de cuidado"
+ },
+ {
+  "id": 42,
+  "texto": "carro morrendo"
+ },
+ {
+  "id": 76,
+  "texto": "prateleira solto"
+ },
+ {
+  "id": 109,
+  "texto": "estou gravida"
+ },
+ {
+  "id": 108,
+  "texto": "briga de divisa com o vizinho"
+ },
+ {
+  "id": 39,
+  "texto": "quero comida caseira"
+ },
+ {
+  "id": 54,
+  "texto": "preciso aplicar antibiotico em casa"
+ },
+ {
+  "id": 40,
+  "texto": "portao travado"
+ },
+ {
+  "id": 33,
+  "texto": "nao declarei o imposto"
+ },
+ {
+  "id": 77,
+  "texto": "agua suja saindo da torneira"
+ },
+ {
+  "id": 84,
+  "texto": "churrasco para vinte pessoas"
+ },
+ {
+  "id": 34,
+  "texto": "meu pai esta acamado"
+ },
+ {
+  "id": 99,
+  "texto": "laminado levantou depois de molhar"
+ },
+ {
+  "id": 23,
+  "texto": "muita acne"
+ },
+ {
+  "id": 64,
+  "texto": "som do carro parou"
+ },
+ {
+  "id": 64,
+  "texto": "radio do carro nao liga"
+ },
+ {
+  "id": 77,
+  "texto": "agua da torneira suja"
+ },
+ {
+  "id": 44,
+  "texto": "tv sem sinal"
+ },
+ {
+  "id": 1,
+  "texto": "chuveiro queimado"
+ },
+ {
+  "id": 82,
+  "texto": "sobrancelha falhada"
+ },
+ {
+  "id": 44,
+  "texto": "antena fora de posicao"
+ },
+ {
+  "id": 47,
+  "texto": "telhado vazando"
+ },
+ {
+  "id": 41,
+  "texto": "sofa manchado"
+ },
+ {
+  "id": 106,
+  "texto": "nao sei o que vestir"
+ },
+ {
+  "id": 24,
+  "texto": "barba falhada"
+ },
+ {
+  "id": 103,
+  "texto": "televisao nao liga"
+ },
+ {
+  "id": 20,
+  "texto": "unha encravada"
+ },
+ {
+  "id": 73,
+  "texto": "editar videos para o meu instagram"
+ },
+ {
+  "id": 39,
+  "texto": "sem tempo pra cozinhar"
+ },
+ {
+  "id": 14,
+  "texto": "vidro trincado"
+ },
+ {
+  "id": 87,
+  "texto": "portao fazendo barulho"
+ },
+ {
+  "id": 21,
+  "texto": "cabelo danificado"
+ },
+ {
+  "id": 3,
+  "texto": "parede descascando"
+ },
+ {
+  "id": 6,
+  "texto": "monte de roupa pra passar"
+ },
+ {
+  "id": 9,
+  "texto": "porta arrastando no chao"
+ },
+ {
+  "id": 32,
+  "texto": "dificuldade em matematica"
+ },
+ {
+  "id": 11,
+  "texto": "ar condicionado nao gela"
+ },
+ {
+  "id": 9,
+  "texto": "porta empenada"
+ },
+ {
+  "id": 21,
+  "texto": "cabelo ressecado"
+ },
+ {
+  "id": 57,
+  "texto": "pneu furou"
+ },
+ {
+  "id": 17,
+  "texto": "maquina de lavar nao centrifuga"
+ },
+ {
+  "id": 5,
+  "texto": "casa suja"
+ },
+ {
+  "id": 83,
+  "texto": "unha encravada inflamou"
+ },
+ {
+  "id": 28,
+  "texto": "computador lento"
+ },
+ {
+  "id": 70,
+  "texto": "preciso de recreador para 20 criancas"
+ },
+ {
+  "id": 63,
+  "texto": "bati o carro"
+ },
+ {
+  "id": 26,
+  "texto": "site lento"
+ },
+ {
+  "id": 91,
+  "texto": "luz do painel acesa no carro"
+ },
+ {
+  "id": 13,
+  "texto": "varias coisinhas pra fazer"
+ },
+ {
+  "id": 18,
+  "texto": "roupa larga"
+ },
+ {
+  "id": 41,
+  "texto": "sofa afundado"
+ },
+ {
+  "id": 63,
+  "texto": "bati o carro na traseira"
+ },
+ {
+  "id": 38,
+  "texto": "piso oco"
+ },
+ {
+  "id": 62,
+  "texto": "esgoto voltando pelo ralo"
+ },
+ {
+  "id": 59,
+  "texto": "taco manchado"
+ },
+ {
+  "id": 10,
+  "texto": "chave quebrada"
+ },
+ {
+  "id": 35,
+  "texto": "volto a trabalhar semana que vem"
+ },
+ {
+  "id": 76,
+  "texto": "prateleira quebrado"
+ },
+ {
+  "id": 103,
+  "texto": "tv nao liga"
+ },
+ {
+  "id": 27,
+  "texto": "logo pixelado"
+ },
+ {
+  "id": 12,
+  "texto": "casa cheia de barata"
+ },
+ {
+  "id": 108,
+  "texto": "divisa errada do terreno"
+ },
+ {
+  "id": 43,
+  "texto": "camera fora do ar"
+ },
+ {
+  "id": 72,
+  "texto": "preciso traduzir um documento"
+ },
+ {
+  "id": 53,
+  "texto": "quero uma dieta"
+ },
+ {
+  "id": 37,
+  "texto": "festa no fim de semana"
+ },
+ {
+  "id": 89,
+  "texto": "pneu da bicicleta vazio"
+ },
+ {
+  "id": 22,
+  "texto": "nao sei me maquiar"
+ },
+ {
+  "id": 56,
+  "texto": "lavar o carro em casa"
+ },
+ {
+  "id": 43,
+  "texto": "camera nao grava"
+ },
+ {
+  "id": 46,
+  "texto": "preciso de garcom pro sabado"
+ },
+ {
+  "id": 107,
+  "texto": "contas fora de controle"
+ }
+]
