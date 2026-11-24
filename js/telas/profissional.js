@@ -146,6 +146,33 @@ export default async function telaProfissional({ D, ir }) {
   }
   pintarFotos();
 
+  // ---------------------------------------------------------------- telefone (obrigatório para aparecer)
+  function blocoSms() {
+    if (novo || atual?.telefoneConfirmado) return null;
+    const fone = h('input', { type: 'tel', inputmode: 'tel', value: atual?.telefone || u.telefone || '', placeholder: '(11) 91234-5678' });
+    const codigo = h('input', { inputmode: 'numeric', maxlength: 6, placeholder: 'Código de 6 números', autocomplete: 'one-time-code' });
+    const erroSms = h('div.erro');
+    const passo2 = h('div', { hidden: true }, h('div.campo', h('label', 'Código que chegou por SMS'), codigo));
+    let confirmacao = null;
+    const enviar = h('button.botao.peq', { type: 'button', id: 'btn-sms' }, 'Enviar código por SMS');
+    const confirmar = h('button.botao.peq', { type: 'button', hidden: true }, 'Confirmar');
+    enviar.onclick = () => botaoCarregando(enviar, D.enviarCodigoSms(fone.value, 'btn-sms').then(c => {
+      confirmacao = c; passo2.hidden = false; confirmar.hidden = false; enviar.textContent = 'Reenviar código';
+      erroSms.textContent = ''; codigo.focus(); toast('Código enviado por SMS', 'ok');
+    }).catch(x => { erroSms.textContent = D.mensagemDeErro(x); }));
+    confirmar.onclick = () => botaoCarregando(confirmar, D.confirmarCodigoSms(confirmacao, codigo.value).then(() => {
+      toast('Telefone confirmado! Seu perfil já aparece na busca.', 'ok'); ir('/p/' + u.id, { substituir: true });
+    }).catch(x => { erroSms.textContent = D.mensagemDeErro(x); }));
+    const obrigatorio = !D.apareceNaBusca(atual);
+    return h('div.cartao', { class: obrigatorio ? 'cartao-alerta' : '' },
+      h('h2.titulo-bloco', obrigatorio ? '📱 Confirme seu telefone para aparecer na busca' : '📱 Confirme seu telefone e ganhe o selo'),
+      h('p', { style: { margin: '0 0 12px', fontSize: '13.5px' } }, obrigatorio
+        ? 'É obrigatório para todo profissional: protege os clientes de perfis falsos. Mandamos um código por SMS.'
+        : 'Perfis com telefone confirmado mostram o selo 📱 e passam mais confiança. Mandamos um código por SMS.'),
+      h('div.campo', h('label', 'Seu celular (WhatsApp)'), fone), passo2, erroSms,
+      h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } }, enviar, confirmar));
+  }
+
   const erro = h('div.erro');
   const salvar = h('button.botao.largo', {
     type: 'submit'
@@ -168,8 +195,14 @@ export default async function telaProfissional({ D, ir }) {
         urgencia24h: urg.i.checked, petFriendly: pet.i.checked, disponivel: ativo.i.checked,
         fotos: st.fotos, antesDepois: st.antesDepois,
       }).then(() => {
-        toast(novo ? 'Perfil publicado! Você já aparece na busca.' : 'Perfil atualizado', 'ok');
-        ir('/p/' + u.id, { substituir: true });
+        if (novo || !(atual?.telefoneConfirmado)) {
+          // Telefone ainda não confirmado: volta para o formulário, que agora mostra a confirmação.
+          toast('Perfil salvo! Falta confirmar seu telefone para aparecer na busca.', 'ok');
+          ir('/profissional', { substituir: true });
+        } else {
+          toast('Perfil atualizado', 'ok');
+          ir('/p/' + u.id, { substituir: true });
+        }
       }).catch(x => { erro.textContent = D.mensagemDeErro(x); }));
     }
   },
@@ -206,6 +239,6 @@ export default async function telaProfissional({ D, ir }) {
         h('div.linha-topo', h('button.botao-redondo', { 'aria-label': 'Voltar', onclick: () => voltar('/perfil') }, icone('voltar')),
           h('div.cresce', h('div.sobre', 'Para profissionais'), h('h1', novo ? 'Ofereça seus serviços' : 'Seu perfil profissional'))),
         h('div.recado', { style: { marginTop: '8px' } }, novo ? 'Leva 2 minutos. Clientes da sua região te encontram pela busca e pelo mural.' : 'Mudanças aparecem na busca na hora.')),
-      h('section.secao.form-prof', form)),
+      h('section.secao.form-prof', blocoSms(), form)),
   };
 }

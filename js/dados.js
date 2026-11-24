@@ -52,7 +52,14 @@ const ERROS = {
   'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
   'auth/too-many-requests': 'Muitas tentativas. Espere um pouco e tente de novo.',
   'auth/network-request-failed': 'Sem conexão. Confira a internet.',
-  'permission-denied': 'Sem permissão para isso.',
+  'permission-denied': 'Sem permissão para isso. Se acabou de confirmar o e-mail, toque em "Já confirmei".',
+  'auth/invalid-verification-code': 'Código errado. Confira o SMS e tente de novo.',
+  'auth/code-expired': 'O código venceu. Peça outro.',
+  'auth/invalid-phone-number': 'Esse número não parece válido. Use DDD + número.',
+  'auth/credential-already-in-use': 'Esse telefone já está ligado a outra conta do Trampo.',
+  'auth/provider-already-linked': 'Seu telefone já está confirmado.',
+  'auth/captcha-check-failed': 'A verificação de segurança falhou. Recarregue a página e tente de novo.',
+  'auth/quota-exceeded': 'Muitos SMS agora. Tente de novo em alguns minutos.',
 };
 export function mensagemDeErro(e) {
   return ERROS[e?.code] || e?.message?.replace(/^Firebase: /, '') || 'Algo deu errado. Tente de novo.';
@@ -108,6 +115,8 @@ export async function cadastrar(dados, senha, categoriaInicial = null) {
     cred = await A.createUserWithEmailAndPassword(auth, dados.email.trim(), senha);
   }
   const id = cred.user.uid;
+  // E-mail confirmado é obrigatório (decisão de 24/11/2026): o link sai junto com o cadastro.
+  try { auth.languageCode = 'pt-BR'; await A.sendEmailVerification(cred.user); } catch { /* reenvia pela tela de confirmação */ }
   const agora = Date.now();
   const u = {
     id, nome: dados.nome.trim(), email: dados.email.trim().toLowerCase(), telefone: dados.telefone || '',
@@ -154,7 +163,7 @@ let cachePrestadores = null;
 export function prestadores() {
   if (!cachePrestadores) {
     cachePrestadores = getDocs(query(col('prestadores'), where('disponivel', '==', true), limit(400)))
-      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() })))
+      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => apareceNaBusca(p)))
       .catch(e => { cachePrestadores = null; throw e; });
   }
   return cachePrestadores;
@@ -492,3 +501,55 @@ export async function enviarFoto(arquivo, pasta = 'trabalhos') {
 export async function apagarFoto(url) {
   try { const { S, st } = await storage(); await S.deleteObject(S.ref(st, url)); } catch { /* fica órfão, sem dano */ }
 }
+
+
+// ------------------------------------------------------------------ confirmações (e-mail e telefone)
+/** Conta logada (não visitante) com e-mail ainda não confirmado. */
+export function emailPendente() {
+  const u = auth.currentUser;
+  return !!u && !u.isAnonymous && !u.emailVerified;
+}
+
+/** Relê a conta; se confirmou, renova o token (as regras do banco leem email_verified dele). */
+export async function conferirEmail() {
+  const u = auth.currentUser; if (!u || u.isAnonymous) return true;
+  await A.reload(u).catch(() => {});
+  const ok = !!auth.currentUser?.emailVerified;
+  if (ok) { await auth.currentUser.getIdToken(true).catch(() => {}); avisar(); }
+  return ok;
+}
+
+export async function reenviarConfirmacaoEmail() {
+  const u = auth.currentUser; if (!u) throw new Error('Entre na sua conta');
+  auth.languageCode = 'pt-BR';
+  await A.sendEmailVerification(u);
+}
+
+/**
+ * Telefone confirmado por SMS (obrigatório para o profissional aparecer na busca).
+ * O reCAPTCHA é invisível: o Firebase só mostra um desafio se desconfiar de robô.
+ */
+let recaptcha = null;
+export async function enviarCodigoSms(telefone, idBotao) {
+  const u = auth.currentUser; if (!u || u.isAnonymous) throw new Error('Entre na sua conta');
+  const d = String(telefone).replace(/\D/g, '');
+  if (d.length < 10) throw Object.assign(new Error(''), { code: 'auth/invalid-phone-number' });
+  const e164 = '+' + (d.startsWith('55') && d.length >= 12 ? d : '55' + d);
+  auth.languageCode = 'pt-BR';
+  recaptcha?.clear?.();
+  recaptcha = new A.RecaptchaVerifier(auth, idBotao, { size: 'invisible' });
+  return await A.linkWithPhoneNumber(u, e164, recaptcha);
+}
+
+export async function confirmarCodigoSms(confirmacao, codigo) {
+  await confirmacao.confirm(String(codigo).replace(/\D/g, ''));
+  await auth.currentUser.getIdToken(true);
+  // A regra só aceita o selo com phone_number no token — por isso o token é renovado antes.
+  await updateDoc(doc(db, 'prestadores', uid()), { telefoneConfirmado: true });
+  cachePrestadores = null;
+  avisar();
+}
+
+/** Profissional criado depois do corte só aparece com telefone confirmado (mesma regra do app). */
+export const CORTE_TELEFONE = 1795575600000; // 25/11/2026 00:00 em Brasília
+export const apareceNaBusca = p => !!p.telefoneConfirmado || (p.criadoEm || 0) < CORTE_TELEFONE;

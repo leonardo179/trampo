@@ -16,6 +16,7 @@ const ROTAS = [
   [/^\/favoritos$/, 'favoritos', 'favoritos'],
   [/^\/perfil$/, 'perfil', 'perfil'],
   [/^\/entrar$/, 'acesso', null],
+  [/^\/confirmar-email$/, 'confirmar', null],
   [/^\/sobre$/, 'sobre', 'sobre'],
   [/^\/profissional$/, 'profissional', 'perfil'],
   [/^\/avaliar\/([\w-]+)$/, 'avaliar', 'inicio'],
@@ -86,6 +87,11 @@ async function rotear() {
     if (rotaAtual !== bruto) return;
   }
   if (nome === 'acesso' && est?.usuario && !est.visitante) { ir('/', { substituir: true }); return; }
+  // E-mail confirmado é obrigatório: conta sem confirmação só vê a tela que pede o link.
+  if (est?.usuario && !est.visitante && D.emailPendente() && nome !== 'confirmar') {
+    ir('/confirmar-email', { substituir: true }); return;
+  }
+  if (nome === 'confirmar' && !(est?.usuario && !est.visitante && D.emailPendente())) { ir('/', { substituir: true }); return; }
 
   limparTela?.(); limparTela = null;
   const mod = await carregar(nome);

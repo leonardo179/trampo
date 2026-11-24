@@ -601,3 +601,12 @@ svg.i.pp { width: 15px; height: 15px; }
 .trab-mini span { position: relative; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--superficie-2); flex: none; }
 .trab-mini img { width: 100%; height: 100%; object-fit: cover; }
 .trab-mini b { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(14,18,48,.55); color: #fff; font-size: 13px; }
+
+/* confirmação de e-mail */
+.confirmar { min-height: 100dvh; display: grid; place-items: center; background: var(--grad); color: #fff; padding: 28px; }
+.confirmar-caixa { width: 100%; max-width: 420px; display: grid; gap: 12px; justify-items: center; text-align: center; }
+.confirmar-caixa h1 { margin: 10px 0 0; font-size: 26px; }
+.confirmar-caixa p { margin: 0 0 10px; opacity: .92; line-height: 1.5; }
+.confirmar-dica { font-size: 12.5px; opacity: .75 !important; display: flex; align-items: center; gap: 6px; }
+
+.cartao-alerta { border: 1.5px solid color-mix(in srgb, var(--perigo) 40%, transparent); background: color-mix(in srgb, var(--perigo) 6%, var(--superficie)); margin-bottom: 12px; }

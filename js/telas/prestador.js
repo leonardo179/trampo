@@ -113,6 +113,8 @@ export default async function telaPrestador({ D, args, ir }) {
       precoBloco,
       ehMeu ? h('div', { style: { display: 'grid', gap: '10px' } },
         h('div.honesto', h('span', '👤'), h('div', h('b', 'Este é o seu perfil'), 'É assim que os clientes veem você.')),
+        !D.apareceNaBusca(p) ? h('div.honesto', { style: { background: 'color-mix(in srgb, var(--perigo) 12%, var(--superficie))', color: 'inherit' } },
+          h('span', '📱'), h('div', h('b', 'Ainda não aparece na busca'), 'Confirme seu telefone por SMS no seu perfil profissional.')) : null,
         h('a.botao.sec.largo', { href: '#/profissional' }, 'Editar perfil profissional'))
         : h('div', { style: { display: 'grid', gap: '8px' } }, h('div.so-pc.grade', botoesContato('largo'), h('div.nota-chat', 'Pelo Trampo fica registrado o que vocês combinarem.')), h('div#avaliar-slot')),
       h('div', { style: { marginTop: '14px' } },
