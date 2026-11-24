@@ -157,7 +157,8 @@ export default async function telaProfissional({ D, ir }) {
     const enviar = h('button.botao.peq', { type: 'button', id: 'btn-sms' }, 'Enviar código por SMS');
     const confirmar = h('button.botao.peq', { type: 'button', hidden: true }, 'Confirmar');
     enviar.onclick = () => botaoCarregando(enviar, D.enviarCodigoSms(fone.value, 'btn-sms').then(c => {
-      confirmacao = c; passo2.hidden = false; confirmar.hidden = false; enviar.textContent = 'Reenviar código';
+      confirmacao = c; passo2.hidden = false; confirmar.hidden = false;
+      setTimeout(() => { enviar.textContent = 'Reenviar código'; }); // depois que o botão volta do "carregando"
       erroSms.textContent = ''; codigo.focus(); toast('Código enviado por SMS', 'ok');
     }).catch(x => { erroSms.textContent = D.mensagemDeErro(x); }));
     confirmar.onclick = () => botaoCarregando(confirmar, D.confirmarCodigoSms(confirmacao, codigo.value).then(() => {
