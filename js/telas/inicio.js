@@ -1,10 +1,11 @@
 import { h, icone, toast, atrasar, aoAparecer, esqueletos, vazio } from '../ui.js';
 import { categorias, categoriaSinc, cartaoPrestador } from '../componentes.js';
 import * as M from '../motor.js';
+import { cartaoPosContato } from '../posContato.js';
 
 // As oito mais pedidas, com rótulo curto escrito à mão (igual à GradeCategorias do app).
 const MAIS_PEDIDAS = [[1, 'Eletricista'], [2, 'Encanador'], [5, 'Diarista'], [3, 'Pintor'], [8, 'Montador'], [11, 'Ar-cond.'], [21, 'Cabelo'], [28, 'Informática']];
-const EXEMPLOS = ['meu chuveiro queimou', 'faxina no sábado em Pinheiros', 'pc lentíssimo', 'tenho cachorro em casa, preciso de diarista', 'vazamento urgente', 'montar guarda-roupa'];
+const EXEMPLOS = ['minha pia entupiu', 'tenho cachorro em casa, preciso de diarista', 'pc lentíssimo', 'vazamento urgente', 'chuveiro não esquenta', 'ar condicionado pingando água'];
 const POR_PAGINA = 20;
 
 // Estado guardado entre visitas: voltar de um perfil não refaz a busca nem perde a rolagem.
@@ -56,8 +57,11 @@ export default async function inicio({ D, params, ir }) {
 
   // ---------------------------------------------------------------- corpo
   const corpo = h('div');
+  const pos = D.estado.visitante ? null : cartaoPosContato(D);
   const el = h('div', cab,
-    D.estado.visitante ? h('div.faixa-visitante', icone('info', 'p'), 'Você está como visitante.', h('button.botao', { onclick: () => D.sair() }, 'Criar conta')) : null,
+    D.estado.visitante ? h('div.faixa-visitante', icone('info', 'p'),
+      h('span', 'Primeira vez aqui? ', h('a', { href: '#/sobre', style: { color: 'inherit', textDecoration: 'underline' } }, 'Conheça o Trampo')),
+      h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta')) : null,
     corpo);
 
   // ---------------------------------------------------------------- voz
@@ -118,6 +122,7 @@ export default async function inicio({ D, params, ir }) {
     }));
     const destaques = h('div', esqueletos(4));
     corpo.replaceChildren(
+      pos ? h('section.secao', { style: { paddingBottom: 0 } }, pos.el) : '',
       h('section.secao',
         h('div.lista.grade-2',
           h('button.cartao', {
@@ -226,6 +231,9 @@ export default async function inicio({ D, params, ir }) {
     const aviso = semServico && M.pronto()
       ? h('div.honesto', { style: { marginBottom: '12px' } }, h('span', '🔎'),
         h('div', h('b', 'Não reconheci um serviço nessa frase'), `Busquei pelo texto de “${S.frase.trim()}”. Toque numa categoria se quiser ser mais específico.`))
+      : res.foraDoBairro && res.length
+        ? h('div.honesto', { style: { marginBottom: '12px' } }, h('span', '📍'),
+          h('div', h('b', `Ninguém desse serviço em ${res.foraDoBairro} ainda`), 'Mostrando quem atende nos outros bairros.'))
       : res.foraDaCidade && res.length && u.cidade
         ? h('div.honesto', { style: { marginBottom: '12px' } }, h('span', '📍'),
           h('div', h('b', `Ninguém em ${u.cidade} ainda`), 'Mostrando profissionais de outras cidades que atendem esse serviço.'))
@@ -272,5 +280,5 @@ export default async function inicio({ D, params, ir }) {
   pintarPrevia();
   desenhar();
 
-  return { el, titulo: S.frase ? S.frase : '' };
+  return { el, titulo: S.frase ? S.frase : '', limpar: () => pos?.parar() };
 }

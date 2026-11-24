@@ -78,6 +78,13 @@ export function icone(nome, cls = '') {
   return s;
 }
 
+// ------------------------------------------------------------------ marca
+export const LOGO_SVG = (id = 'lg') => `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B6DFF"/><stop offset="1" stop-color="#5B3FD9"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#${id})"/><path d="M18 22h28" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M32 22v24" stroke="#fff" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="44" r="6" fill="#22D3A8" stroke="#fff" stroke-width="2.5"/></svg>`;
+let nLogo = 0;
+export function logo(tam = 36) {
+  return h('span.logo', { style: { width: tam + 'px', height: tam + 'px' }, html: LOGO_SVG('lg' + (nLogo++)) });
+}
+
 // ------------------------------------------------------------------ toasts
 export function toast(texto, tipo = '') {
   const t = h('div.toast', { class: tipo }, tipo === 'ok' ? icone('check', 'p') : null, texto);
@@ -132,10 +139,15 @@ export function visorDeImagem(url, legenda = '') {
 
 // ------------------------------------------------------------------ formatação
 const corDeNome = ['#7C5CFF', '#22B893', '#F59E0B', '#EC4899', '#3B82F6', '#EF4444', '#8B5CF6', '#14B8A6'];
-export function avatar(nome, url, cls = '', online = false) {
+/**
+ * Foto do perfil; sem foto, o retrato ilustrado do profissional (img/av/{id}.svg) e, por
+ * último, as iniciais coloridas.
+ */
+export function avatar(nome, url, cls = '', online = false, id = null) {
   const iniciais = (nome || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   let soma = 0; for (const c of nome || '') soma = (soma * 31 + c.charCodeAt(0)) | 0;
   const a = h('div.avatar', { class: cls, style: { background: corDeNome[Math.abs(soma) % corDeNome.length] } });
+  if (!url && id) url = new URL(`../img/av/${id}.svg`, import.meta.url).href;
   if (url) {
     const img = h('img', { src: url, alt: '', loading: 'lazy', decoding: 'async' });
     img.onerror = () => { img.remove(); a.prepend(iniciais); };

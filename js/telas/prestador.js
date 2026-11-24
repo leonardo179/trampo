@@ -23,7 +23,7 @@ export default async function telaPrestador({ D, args, ir }) {
   async function contatar(canal) {
     if (D.estado.visitante) {
       folha(f => [h('h2', 'Crie sua conta para chamar'), h('p.sub', 'É grátis e leva meio minuto. Assim o profissional sabe quem está chamando e você pode avaliar depois.'),
-        h('div.acoes', h('button.botao.sec', { onclick: f }, 'Agora não'), h('button.botao', { onclick: () => { f(); D.sair(); } }, 'Criar conta'))]);
+        h('div.acoes', h('button.botao.sec', { onclick: f }, 'Agora não'), h('button.botao', { onclick: () => { f(); ir('/entrar?modo=cadastro'); } }, 'Criar conta'))]);
       return;
     }
     if (canal === 'CHAT') {
@@ -74,7 +74,7 @@ export default async function telaPrestador({ D, args, ir }) {
 
   const principal = h('div', { style: { display: 'grid', gap: '12px' } },
     h('div.cartao', { style: { paddingTop: '0' } },
-      h('div', { style: { marginTop: '-44px' } }, avatar(p.nome, p.fotoUrl, 'g', atendeAgora(p))),
+      h('div', { style: { marginTop: '-44px' } }, avatar(p.nome, p.fotoUrl, 'g', atendeAgora(p), p.id)),
       h('h1', p.nome, p.verificado ? h('span', { style: { color: 'var(--violeta)' }, title: 'Documento verificado' }, icone('verif')) : null),
       h('div.oque', [cat.nome, ...extras.map(e => e.nome)].join(' · ')),
       h('div.oque', { style: { display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' } }, icone('local', 'pp'),
@@ -107,8 +107,10 @@ export default async function telaPrestador({ D, args, ir }) {
   const lado = h('aside.lado',
     h('div.cartao',
       precoBloco,
-      ehMeu ? h('div.honesto', h('span', '👤'), h('div', h('b', 'Este é o seu perfil'), 'É assim que os clientes veem você.'))
-        : h('div', { style: { display: 'grid', gap: '8px' } }, botoesContato('largo')),
+      ehMeu ? h('div', { style: { display: 'grid', gap: '10px' } },
+        h('div.honesto', h('span', '👤'), h('div', h('b', 'Este é o seu perfil'), 'É assim que os clientes veem você.')),
+        h('a.botao.sec.largo', { href: '#/profissional' }, 'Editar perfil profissional'))
+        : h('div', { style: { display: 'grid', gap: '8px' } }, h('div.so-pc.grade', botoesContato('largo')), h('div#avaliar-slot')),
       h('div', { style: { marginTop: '14px' } },
         h('div.info-linha', icone('calendario', 'p'),
           (p.diasSemana || [1, 2, 3, 4, 5]).sort().map(d => DIAS[d % 7]).join(', ') + ` · ${p.horaInicio || '08:00'}–${p.horaFim || '18:00'}`),
@@ -122,6 +124,14 @@ export default async function telaPrestador({ D, args, ir }) {
 
   const el = h('div', topo, h('div.detalhe', principal, lado), barraCel,
     h('div.so-cel', { style: { height: '80px' } }));
+
+  // Já chamou e passou uma hora: o botão de avaliar aparece aqui também (além do Início).
+  if (!ehMeu) D.meuContatoCom(p.id).then(async c => {
+    const slot = el.querySelector('#avaliar-slot');
+    if (!c || c.avaliado || !slot) return;
+    const { podeAvaliar } = await import('../reputacao.js');
+    if (podeAvaliar(c, Date.now())) slot.replaceWith(h('a.botao.contorno.largo', { href: `#/avaliar/${p.id}` }, icone('estrela', 'p'), `Avaliar ${p.nome.split(' ')[0]}`));
+  });
 
   // ---------------------------------------------------------------- avaliações (carregam depois)
   D.avaliacoesDe(p.id).then(avs => {

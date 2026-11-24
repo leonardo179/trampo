@@ -1,5 +1,5 @@
 // Casca do app: rotas por hash, navegação (barra embaixo no celular, lateral no PC) e sessão.
-import { h, icone, toast } from './ui.js';
+import { h, icone, toast, logo } from './ui.js';
 
 const app = document.getElementById('app');
 let D; // módulo de dados (Firebase), carregado em paralelo com a primeira pintura
@@ -16,6 +16,9 @@ const ROTAS = [
   [/^\/favoritos$/, 'favoritos', 'favoritos'],
   [/^\/perfil$/, 'perfil', 'perfil'],
   [/^\/entrar$/, 'acesso', null],
+  [/^\/sobre$/, 'sobre', 'sobre'],
+  [/^\/profissional$/, 'profissional', 'perfil'],
+  [/^\/avaliar\/([\w-]+)$/, 'avaliar', 'inicio'],
 ];
 const ABAS = [
   ['inicio', '#/', 'casa', 'Início'],
@@ -34,10 +37,13 @@ const rolagens = new Map();
 function montarShell() {
   conteudo = h('main.conteudo#conteudo', { tabindex: '-1' });
   nav = h('nav.nav', { 'aria-label': 'Navegação principal' },
-    h('a.nav-marca', { href: '#/' }, h('span.logo', 'T'), 'Trampo'),
+    h('a.nav-marca', { href: '#/' }, logo(36), 'Trampo'),
     ABAS.map(([id, href, ic, rot]) =>
       h('a.nav-item', { href, 'data-aba': id }, h('span.bolha', icone(ic)), h('span', rot), h('span.ponto', { hidden: true }))),
-    h('div.nav-rodape', 'Contato grátis, sem moeda e sem taxa. Preço e prazo combinados direto com o profissional.'));
+    h('div.nav-rodape',
+      h('a.nav-sobre', { href: '#/sobre' }, h('span.logo-mini', icone('escudo', 'pp')), 'Conheça o Trampo'),
+      h('p', 'Contato grátis, sem moeda e sem taxa. Preço e prazo combinados direto com o profissional.'),
+      h('div.links-legais', h('a', { href: 'termos.html' }, 'Termos'), ' · ', h('a', { href: 'privacidade.html' }, 'Privacidade'))));
   shell = h('div.shell', nav, conteudo);
 }
 
@@ -70,9 +76,14 @@ async function rotear() {
   const args = caminho.match(re).slice(1);
 
   const est = D?.estado;
-  // Sem sessão: tudo leva à tela de acesso (as regras do Firestore pedem login para ler a vitrine).
-  if (nome !== 'acesso' && !est?.usuario) { ir('/entrar', { substituir: true }); return; }
-  if (nome === 'acesso' && est?.usuario) { ir('/', { substituir: true }); return; }
+  // Quem chega sem conta entra direto na vitrine, como visitante (sessão anônima: as regras do
+  // Firestore pedem login para ler). A conta só é pedida na hora de chamar, salvar ou publicar.
+  if (!est?.usuario && nome !== 'acesso') {
+    try { await D.entrarComoVisitante(); }
+    catch { ir('/entrar', { substituir: true }); return; }
+    if (rotaAtual !== bruto) return;
+  }
+  if (nome === 'acesso' && est?.usuario && !est.visitante) { ir('/', { substituir: true }); return; }
 
   limparTela?.(); limparTela = null;
   const mod = await carregar(nome);
@@ -135,7 +146,8 @@ async function iniciar() {
     if (est.usuario?.id !== quem) {
       quem = est.usuario?.id;
       ligarContadores();
-      if (!est.usuario) { shell = null; ir('/entrar', { substituir: true }); }
+      // Saiu da conta: volta para a vitrine (como visitante) com a navegação redesenhada.
+      if (!est.usuario) { shell = null; ir('/', { substituir: true }); }
     }
   });
   ligarContadores();

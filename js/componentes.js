@@ -72,7 +72,7 @@ export function cartaoPrestador(D, p, { distancia = null, ir } = {}) {
   ].filter(Boolean);
 
   const a = h('a.cartao.prest', { href: `#/p/${p.id}`, 'aria-label': `${p.nome}, ${cat.nome}` },
-    avatar(p.nome, p.fotoUrl, '', atendeAgora(p)),
+    avatar(p.nome, p.fotoUrl, '', atendeAgora(p), p.id),
     h('div.corpo',
       h('div.nome', h('span', p.nome), p.verificado ? h('span.verif', { title: 'Documento verificado' }, icone('verif', 'pp')) : null,
         p.urgencia24h ? h('span.selo-urg', { title: 'Atende urgência 24 h' }, icone('raio', 'pp'), '24h') : null),

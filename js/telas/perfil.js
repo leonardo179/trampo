@@ -49,7 +49,7 @@ export default async function telaPerfil({ D, ir }) {
   const el = h('div',
     h('header.cabecalho',
       h('div', { style: { display: 'flex', gap: '16px', alignItems: 'center', position: 'relative', zIndex: 1 } },
-        avatar(u.nome, u.fotoUrl, '', false),
+        avatar(u.nome, u.fotoUrl, '', false, D.estado.visitante ? null : u.id),
         h('div', { style: { minWidth: 0 } },
           h('div.sobre', visitante ? 'Visitante' : u.email),
           h('h1', { style: { margin: 0 } }, visitante ? 'Você está explorando' : u.nome),
@@ -58,17 +58,22 @@ export default async function telaPerfil({ D, ir }) {
     visitante ? h('section.secao', h('div.cartao',
       h('div', { style: { fontWeight: 750, fontSize: '16px', marginBottom: '6px' } }, 'Uma conta só para tudo'),
       h('p', { style: { margin: '0 0 14px', color: 'var(--texto-2)', fontSize: '14px' } }, 'Com ela você chama profissionais, guarda favoritos, publica pedidos — e, se quiser, também oferece seus serviços.'),
-      h('button.botao.largo', { onclick: () => D.sair() }, 'Criar conta grátis'))) : null,
+      h('button.botao.largo', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis'))) : null,
 
     h('section.secao', h('div.cartao', { style: { padding: '4px 16px' } },
       visitante ? null : linha('usuario', 'Meus dados', 'Nome, WhatsApp, cidade e bairro', editar),
       visitante ? null : linha('mural', 'Meus pedidos', 'O que você publicou no mural', null, { href: '#/mural?meus=1' }),
       visitante ? null : linha('chat', 'Conversas', 'Mensagens com profissionais', null, { href: '#/conversas' }),
-      meuProf ? linha('maleta', 'Meu perfil profissional', 'Veja como os clientes enxergam você', null, { href: `#/p/${u.id}`, cor: 'var(--agua-esc)' }) : null,
+      meuProf ? linha('maleta', 'Meu perfil profissional', 'Veja como os clientes enxergam você', null, { href: `#/p/${u.id}`, cor: 'var(--agua-esc)' })
+        : visitante ? null : linha('maleta', 'Oferecer meus serviços', 'Crie seu perfil profissional em 2 minutos — grátis', null, { href: '#/profissional', cor: 'var(--agua-esc)' }),
+      meuProf ? linha('filtro', 'Editar perfil profissional', 'Serviços, preços, horários e descrição', null, { href: '#/profissional' }) : null,
       instalar)),
 
     h('section.secao', h('div.cartao', { style: { padding: '4px 16px' } },
-      linha('escudo', 'Como o Trampo funciona', 'Sem moeda, sem taxa, sem comissão', () => folha(f => [
+      linha('info', 'Conheça o Trampo', 'O problema que resolvemos e os números', null, { href: '#/sobre' }),
+      linha('mural', 'Termos de uso', null, null, { href: 'termos.html' }),
+      linha('escudo', 'Política de privacidade', 'LGPD: quais dados usamos e por quê', null, { href: 'privacidade.html' }),
+      linha('check', 'Como o Trampo funciona', 'Sem moeda, sem taxa, sem comissão', () => folha(f => [
         h('h2', 'O combinado do Trampo'),
         ...[['🆓', 'Ver e falar com um profissional é de graça. Sempre.'],
           ['🚫', 'Não vendemos moedas nem cobramos por contato liberado.'],

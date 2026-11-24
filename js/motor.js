@@ -23,14 +23,16 @@ export function preparar() {
 export const pronto = () => !!vocab;
 
 /**
- * O motor é idêntico ao Kotlin; a única correção é aqui, na ponte: o jeito de pedir
+ * O motor é idêntico ao Kotlin; as correções ficam aqui, na ponte. O jeito de pedir
  * ("preciso", "quero", "procuro"...) sobrava como texto livre e virava filtro por nome/descrição,
  * zerando a lista de "preciso de diarista". O app Android tem o mesmo defeito.
  */
 export function interpretar(frase) {
   const i = interpretarKt(frase, vocab);
   if (!i.textoLivre) return i;
-  const sobra = i.textoLivre.split(/\s+/).filter(w => w && !ENCHIMENTO.has(norm(w))).join(' ');
+  // Com o serviço reconhecido, a sobra ("água", "sábado"...) só atrapalharia: filtrava nome e
+  // descrição e zerava a lista. Ela só vale como busca quando nenhum serviço foi entendido.
+  const sobra = i.categoriaId != null ? '' : i.textoLivre.split(/\s+/).filter(w => w && !ENCHIMENTO.has(norm(w))).join(' ');
   if (sobra === i.textoLivre) return i;
   const etiquetas = i.etiquetas.filter(e => e.campo !== Campo.TEXTO);
   if (sobra) etiquetas.push({ campo: Campo.TEXTO, emoji: '', rotulo: `"${sobra}"` });
@@ -66,6 +68,12 @@ export function aplicar(todos, intencao, frase, { usuario, geo }) {
     f = { texto: frase.trim(), cidade: usuario.cidade || '', lat, lng };
   }
   let r = aplicarKt(todos, f);
+  // Ninguém no bairro pedido: mostra o mesmo serviço nos outros bairros, mais perto primeiro.
+  if (!r.length && f.bairro) {
+    const bairro = f.bairro;
+    r = aplicarKt(todos, { ...f, bairro: '' });
+    r.foraDoBairro = bairro;
+  }
   if (!r.length && f.cidade && !(intencao?.cidade)) {
     r = aplicarKt(todos, { ...f, cidade: '' });
     r.foraDaCidade = true;
@@ -89,7 +97,7 @@ export function filtrarExtras(res, filtros) {
     (!filtros.has('verificado') || p.verificado) &&
     (!filtros.has('preco') || p.precoVisita > 0 || p.precoHora > 0) &&
     (!filtros.has('pet') || p.petFriendly));
-  saida.foraDaCidade = res.foraDaCidade;
+  saida.foraDaCidade = res.foraDaCidade; saida.foraDoBairro = res.foraDoBairro;
   return saida;
 }
 
@@ -97,7 +105,7 @@ const ORDEM_DA_TELA = { relevancia: Ordem.RELEVANCIA, nota: Ordem.AVALIACAO, per
 export function ordenar(res, ordem) {
   if (ordem === 'relevancia') return res; // já vem na ordem do motor (ou na que a frase pediu)
   const r = ordenarKt(res, ORDEM_DA_TELA[ordem] || Ordem.RELEVANCIA);
-  r.foraDaCidade = res.foraDaCidade;
+  r.foraDaCidade = res.foraDaCidade; r.foraDoBairro = res.foraDoBairro;
   return r;
 }
 

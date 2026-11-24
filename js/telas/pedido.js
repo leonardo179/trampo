@@ -81,7 +81,9 @@ export default async function telaPedido({ D, args, ir }) {
       D.meuPerfilProfissional().then(prof => {
         const alvo = el.querySelector('#acao'); if (!alvo) return;
         if (!prof) {
-          alvo.replaceWith(h('div.honesto', h('span', '🧰'), h('div', h('b', 'Só profissionais podem se oferecer'), 'Este pedido é de outra pessoa. No app Android você cria seu perfil profissional em um minuto.')));
+          alvo.replaceWith(h('div.honesto', h('span', '🧰'), h('div', h('b', 'Você atende esse tipo de serviço?'),
+            'Para se oferecer, crie seu perfil profissional — leva 2 minutos e é grátis. ',
+            h('a.link', { href: D.estado.visitante ? '#/entrar?modo=cadastro' : '#/profissional' }, 'Criar perfil profissional →'))));
           return;
         }
         const aberto = !p.encerrado && (p.interessados || 0) < 5 && !venceu(p);

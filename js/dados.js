@@ -354,3 +354,103 @@ export async function meuPerfilProfissional() {
   try { const s = await getDoc(doc(db, 'prestadores', id)); return s.exists() ? { id, ...s.data() } : null; }
   catch { return null; }
 }
+
+// ------------------------------------------------------------------ depois do contato
+// As perguntas de dois botões ("ele respondeu?", "apareceu?", "o preço foi o combinado?") e a
+// avaliação. Mesmas escritas do RepositorioFirebase.kt: cada contador sobe de 1 numa escrita
+// própria, porque a regra do Firestore só aceita contador que sobe exatamente um por vez.
+export function ouvirContatos(fn) {
+  const id = uid(); if (!id || estado.visitante) { fn([]); return () => {}; }
+  return onSnapshot(query(col('contatos'), where('clienteId', '==', id)),
+    s => fn(s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm - a.criadoEm)), () => fn([]));
+}
+
+const sobe = (prestadorId, campo) => updateDoc(doc(db, 'prestadores', prestadorId), { [campo]: increment(1) });
+
+export async function confirmarResposta(c, respondeu, rapido = false) {
+  await updateDoc(doc(db, 'contatos', c.id), { respondeu, respondeuRapido: respondeu && rapido });
+  if (!respondeu) return;
+  await sobe(c.prestadorId, 'contatosRespondidos');
+  await sobe(c.prestadorId, 'respostasAvaliadas');
+  if (rapido) await sobe(c.prestadorId, 'respondeuRapido');
+}
+
+export async function confirmarComparecimento(c, compareceu) {
+  await updateDoc(doc(db, 'contatos', c.id), { compareceu });
+  await sobe(c.prestadorId, 'combinados');
+  if (compareceu) await sobe(c.prestadorId, 'compareceu');
+}
+
+export async function confirmarPreco(c, cumpriu) {
+  await updateDoc(doc(db, 'contatos', c.id), { precoCumpriu: cumpriu });
+  await sobe(c.prestadorId, 'precosAvaliados');
+  if (cumpriu) await sobe(c.prestadorId, 'precoCumprido');
+}
+
+export async function avaliar(prestadorId, nota, comentario) {
+  const R = await import('./reputacao.js');
+  const u = estado.usuario;
+  if (!u || estado.visitante) throw new Error('Entre na sua conta');
+  const chave = `${u.id}_${prestadorId}`;
+  const contato = (await getDoc(doc(db, 'contatos', chave))).data();
+  if (!contato) throw new Error('Só quem chamou o profissional pode avaliar.');
+  if (!R.podeAvaliar(contato, Date.now())) throw new Error('Aguarde uma hora depois do contato para avaliar.');
+  const anteriores = (await getDocs(query(col('avaliacoes'), where('prestadorId', '==', prestadorId)))).docs.map(d => d.data());
+  const nova = {
+    id: chave, clienteId: u.id, clienteNome: u.nome, prestadorId, nota, comentario: comentario.trim().slice(0, 1000),
+    criadoEm: Date.now(), denunciada: false, motivoDenuncia: '', suspeita: false, motivoSuspeita: '', resposta: '', fotos: [],
+  };
+  // Mesmo aparelho: na web não há identificador de aparelho, então conta como 0 (igual a conta sem aparelho no app).
+  const suspeita = R.analisar(nova, u, anteriores, 0);
+  nova.suspeita = !!suspeita; nova.motivoSuspeita = suspeita?.motivo || '';
+  await setDoc(doc(db, 'avaliacoes', chave), nova);
+  await updateDoc(doc(db, 'contatos', chave), { avaliado: true });
+  const todas = [...anteriores.filter(a => a.id !== chave), nova];
+  await updateDoc(doc(db, 'prestadores', prestadorId), R.camposDoPrestador(todas));
+  cachePrestadores = null; // a vitrine relê com a nota nova
+}
+
+// ------------------------------------------------------------------ perfil profissional
+export async function salvarPerfilProfissional(campos) {
+  const u = estado.usuario;
+  if (!u || estado.visitante) throw new Error('Crie sua conta primeiro.');
+  const ref = doc(db, 'prestadores', u.id);
+  const existe = (await getDoc(ref)).exists();
+  if (existe) {
+    // Só o que é do dono: contadores e reputação ficam como estão (a regra recusaria).
+    await updateDoc(ref, { ...campos, ultimaAtividade: Date.now() });
+  } else {
+    await setDoc(ref, {
+      id: u.id, nome: u.nome, categoriasExtras: [], descricao: '', anosExperiencia: 0,
+      bairro: u.bairro || '', cidade: u.cidade || '', estado: u.estado || '', lat: u.lat ?? null, lng: u.lng ?? null,
+      fotoUrl: '', capaUrl: '', telefone: u.telefone || '', genero: '', urgencia24h: false, petFriendly: false,
+      verificado: false, disponivel: true, diasSemana: [1, 2, 3, 4, 5], horaInicio: '08:00', horaFim: '18:00',
+      fotos: [], antesDepois: [], certificados: [], precoVisita: 0, precoHora: 0, notaMedia: 0, totalAvaliacoes: 0,
+      distribuicao: [0, 0, 0, 0, 0], contatosRecebidos: 0, contatosRespondidos: 0, selos: {}, visualizacoes: 0,
+      criadoEm: Date.now(), ...campos, ultimaAtividade: Date.now(),
+    });
+    await updateDoc(doc(db, 'usuarios', u.id), { ehPrestador: true });
+    estado.usuario = { ...u, ehPrestador: true };
+  }
+  cachePrestadores = null;
+  avisar();
+}
+
+/** Números para a página "Conheça o Trampo" (lidos da base, não escritos à mão). */
+export async function numerosDaBase() {
+  const lista = await prestadores();
+  const avaliacoes = lista.reduce((s, p) => s + (p.totalAvaliacoes || 0), 0);
+  const comTaxa = lista.filter(p => (p.contatosRecebidos || 0) >= 5);
+  const resposta = comTaxa.length ? Math.round(comTaxa.reduce((s, p) => s + p.contatosRespondidos / p.contatosRecebidos, 0) / comTaxa.length * 100) : null;
+  const nota = avaliacoes ? lista.reduce((s, p) => s + (p.notaMedia || 0) * (p.totalAvaliacoes || 0), 0) / avaliacoes : null;
+  const categorias = new Set(lista.map(p => p.categoriaId)).size;
+  const cidades = new Set(lista.map(p => p.cidade)).size;
+  const bairros = new Set(lista.map(p => p.bairro).filter(Boolean)).size;
+  return { profissionais: lista.length, avaliacoes, resposta, nota, categorias, cidades, bairros };
+}
+
+export async function meuContatoCom(prestadorId) {
+  const id = uid(); if (!id || estado.visitante) return null;
+  try { const s = await getDoc(doc(db, 'contatos', `${id}_${prestadorId}`)); return s.exists() ? { id: s.id, ...s.data() } : null; }
+  catch { return null; }
+}

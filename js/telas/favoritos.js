@@ -1,7 +1,7 @@
 import { h, esqueletos, vazio } from '../ui.js';
 import { categorias, cartaoPrestador } from '../componentes.js';
 
-export default async function telaFavoritos({ D }) {
+export default async function telaFavoritos({ D, ir }) {
   await categorias();
   const corpo = h('section.secao', esqueletos(2));
   const el = h('div',
@@ -12,7 +12,7 @@ export default async function telaFavoritos({ D }) {
   function pintar() {
     if (D.estado.visitante) {
       corpo.replaceChildren(vazio('💜', 'Salve quem você gostou', 'Crie sua conta para guardar profissionais e chamar de novo com um toque.',
-        h('button.botao', { onclick: () => D.sair() }, 'Criar conta grátis')));
+        h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis')));
       return;
     }
     const ids = [...D.estado.favoritos];

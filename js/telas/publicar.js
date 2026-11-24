@@ -15,7 +15,7 @@ export default async function telaPublicar({ D, params, ir }) {
   if (D.estado.visitante) {
     return h('div', h('header.cabecalho', h('div.sobre', 'Mural'), h('h1', 'Publicar um pedido')),
       h('section.secao', vazio('📋', 'Crie sua conta para publicar', 'Assim quem se oferecer sabe com quem está falando, e você recebe as propostas aqui.',
-        h('button.botao', { onclick: () => D.sair() }, 'Criar conta grátis'))));
+        h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta grátis'))));
   }
 
   const comCats = new Set(funil.servicos.map(s => s.c));

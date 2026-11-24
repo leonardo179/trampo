@@ -56,7 +56,7 @@ export default async function telaChat({ D, args }) {
   const el = h('div.chat',
     h('div.chat-topo',
       h('button.botao-redondo', { 'aria-label': 'Voltar', onclick: () => voltar('/conversas') }, icone('voltar')),
-      avatar(outroNome || '?', ''),
+      avatar(outroNome || '?', '', '', false, outroId),
       h(souPrest ? 'div' : 'a', { href: souPrest ? null : `#/p/${outroId}`, style: { color: '#fff', minWidth: 0 } },
         h('div.nome', outroNome || 'Conversa'), c.assunto ? h('div.assunto', c.assunto) : null)),
     msgs, form);

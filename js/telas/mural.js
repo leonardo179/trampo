@@ -41,7 +41,7 @@ export default async function telaMural({ D, params, ir }) {
   let aba = params.get('meus') ? 'meus' : 'mural';
   const filtros = { urgentes: false, cidade: false, categoria: null };
   const meuProf = D.estado.visitante ? null : await D.meuPerfilProfissional();
-  if (meuProf) filtros.categoria = meuProf.categoriaId;
+  // Abre com todos os pedidos; o chip da categoria do profissional filtra quando ele quiser.
 
   const corpo = h('section.secao');
   const abas = h('div.abas', { role: 'tablist', style: { margin: '18px 0 0', position: 'relative', zIndex: 1, background: 'rgba(255,255,255,.16)' } });
@@ -59,7 +59,7 @@ export default async function telaMural({ D, params, ir }) {
     parar?.();
     corpo.replaceChildren(esqueletos(3));
     if (aba === 'meus') {
-      if (D.estado.visitante) { corpo.replaceChildren(vazio('📋', 'Publique o que você precisa', 'Crie sua conta para publicar pedidos e receber propostas.', h('button.botao', { onclick: () => D.sair() }, 'Criar conta'))); return; }
+      if (D.estado.visitante) { corpo.replaceChildren(vazio('📋', 'Publique o que você precisa', 'Crie sua conta para publicar pedidos e receber propostas.', h('button.botao', { onclick: () => ir('/entrar?modo=cadastro') }, 'Criar conta'))); return; }
       parar = D.ouvirMeusPedidos(lista => {
         if (!lista.length) { corpo.replaceChildren(vazio('📋', 'Você ainda não publicou', 'Diga o que precisa em poucos toques, sem escrever nada. Até 5 profissionais se oferecem.', h('a.botao', { href: '#/publicar' }, icone('mais', 'p'), 'Publicar pedido'))); return; }
         corpo.replaceChildren(h('div.lista.grade-2', lista.map(p => cartaoPedido(p, { meu: true }))));

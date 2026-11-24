@@ -1,9 +1,10 @@
-import { h, icone, toast, botaoCarregando } from '../ui.js';
+import { h, icone, toast, botaoCarregando, logo } from '../ui.js';
 
 const UFS = 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 
-export default function acesso({ D, ir }) {
-  let modo = 'entrar';
+export default function acesso({ D, ir, params }) {
+  let modo = params.get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
+  const jaVisitante = D.estado.visitante;
   const erro = h('div.erro', { role: 'alert' });
   const corpo = h('div');
 
@@ -68,7 +69,7 @@ export default function acesso({ D, ir }) {
       campo('Bairro', bairro, 'Opcional — ajuda a achar quem está perto.'),
       campo('Senha', senha),
       h('label', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '13px', color: 'var(--texto-2)', margin: '2px 0 14px' } },
-        termos, h('span', 'Li e aceito os termos de uso e a política de privacidade.')),
+        termos, h('span', 'Li e aceito os ', h('a', { href: 'termos.html', target: '_blank' }, 'termos de uso'), ' e a ', h('a', { href: 'privacidade.html', target: '_blank' }, 'política de privacidade'), '.')),
       erro, botao);
   }
 
@@ -82,15 +83,17 @@ export default function acesso({ D, ir }) {
   }
   desenhar();
 
-  const visitante = h('button.botao.sec.largo', {
-    type: 'button',
-    onclick: () => botaoCarregando(visitante, D.entrarComoVisitante().then(() => ir('/', { substituir: true }))
-      .catch(x => { erro.textContent = D.mensagemDeErro(x); }))
-  }, 'Entrar como visitante');
+  const visitante = jaVisitante
+    ? h('button.botao.sec.largo', { type: 'button', onclick: () => history.length > 1 ? history.back() : ir('/', { substituir: true }) }, 'Continuar explorando')
+    : h('button.botao.sec.largo', {
+      type: 'button',
+      onclick: () => botaoCarregando(visitante, D.entrarComoVisitante().then(() => ir('/', { substituir: true }))
+        .catch(x => { erro.textContent = D.mensagemDeErro(x); }))
+    }, 'Entrar como visitante');
 
   return h('div.acesso',
     h('section.acesso-arte',
-      h('div.logo', 'T'),
+      h('a', { href: '#/', style: { display: 'inline-block', marginBottom: '22px', position: 'relative', zIndex: 1 } }, logo(56)),
       h('h1', 'Quem precisa encontra quem faz.'),
       h('p', 'Eletricista, encanador, diarista e mais de 100 serviços perto de você. Escreva o problema do seu jeito — o Trampo entende.'),
       h('div.promessas',
@@ -101,9 +104,11 @@ export default function acesso({ D, ir }) {
           .map(([e, t]) => h('div.promessa', h('span.b', e), t)))),
     h('section.acesso-form',
       h('div.caixa',
-        h('h2', 'Bem-vindo ao Trampo'),
+        h('h2', modo === 'cadastro' ? 'Crie sua conta grátis' : 'Bem-vindo ao Trampo'),
         h('p.sub', 'Uma conta só para contratar e para trabalhar.'),
         abas, corpo,
         h('div.divisor', 'ou'),
-        visitante)));
+        visitante,
+        h('p', { style: { textAlign: 'center', fontSize: '12px', color: 'var(--texto-3)', marginTop: '22px' } },
+          h('a', { href: '#/sobre' }, 'Conheça o Trampo'), ' · ', h('a', { href: 'termos.html' }, 'Termos'), ' · ', h('a', { href: 'privacidade.html' }, 'Privacidade')))));
 }
